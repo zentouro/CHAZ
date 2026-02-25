@@ -40,6 +40,8 @@ pre_path = 'pre/'
 output_path = 'output/'
 Year1 =  
 Year2 = 
+
+## coarse resolution, this needs to be fixed -- check later 
 llon, llat,lldmask = get_landmask(landmaskfile)
 ldmask = lldmask[-12::-24,::24]
 lldmask = lldmask[::-1,:]

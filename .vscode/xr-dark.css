@@ -1,0 +1,12 @@
+html[theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"],
+body.vscode-dark {
+  /* ... */
+  --xr-background-color-row-even: hsl(
+    from var(--pst-color-on-background, #1e1e1f) h s calc(l + 5)
+  );
+  --xr-background-color-row-odd: hsl(
+    from var(--pst-color-on-background, #1e1e1f) h s calc(l + 15)
+  );
+}

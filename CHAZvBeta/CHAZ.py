@@ -12,7 +12,8 @@ import src.calWindCov as calWindCov
 import src.preprocess as preprocess
 import src.calA as calA
 
-print gv.Model, gv.ENS, gv.TCGIinput
+#py2 -> py3 print statement -> function
+print (gv.Model, gv.ENS, gv.TCGIinput)
 
 #######################
 ### Pre-Processes #####
@@ -31,10 +32,10 @@ if gv.runPreprocess:
 if gv.runCHAZ:
         ### get seeding ratio in this experiment
         if gv.TCGIinput != 'random':
-           print 'get Seeding ratio for', gv.Model, gv.ENS
+           print ('get Seeding ratio for', gv.Model, gv.ENS)
            ipath = gv.pre_path
            ratio = GBP.get_seeding_ratio(ipath,1981,2005,'HIST')
-           print 'The seeding ratio is',ratio
+           print ('The seeding ratio is',ratio)
 
         ### running genesis,track,predictors,& intensity
         ### output yearly 
@@ -48,19 +49,19 @@ if gv.runCHAZ:
             ### genesis 
             if gv.calGen:
                if gv.TCGIinput == 'random':
-                  print iy,'random seeding has not yet tested'
+                  print (iy,'random seeding has not yet tested')
                   #climInitDate, climInitLon, climInitLat = GBP.randomSeeding(iy,gv.seedN)
                else:
-                  print iy, 'TCGI'
+                  print (iy, 'TCGI')
                   climInitDate, climInitLon, climInitLat = GBP.getSeeding(fpath,iy,EXP,ratio)
             if gv.calBam:
-               print iy, 'Bam'
+               print (iy, 'Bam')
                fst = GBP.getBam(climInitDate,climInitLon,climInitLat,iy,ichaz,EXP)
-               print iy, 'calculate predictors'
+               print (iy, 'calculate predictors')
                GBP.calPredictors(fst,iy,ichaz,EXP)
                del fst
             if gv.calInt:
-               print iy, 'calculate Intensitys'
+               print (iy, 'calculate Intensitys')
                CHAZ_detsto.calIntensity(EXP,iy,ichaz)
 
         dir_name = gv.ipath

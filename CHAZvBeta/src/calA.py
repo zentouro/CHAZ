@@ -97,7 +97,7 @@ def run_calA():
 				for ixx in range(xllon.shape[0]):
 					for iyy in range(xllat.shape[0]):
 						if np.isnan(covv[:,:,iyy,ixx,iday]).any():
-							print 'break'
+							print('break')
 							break
 						A[:,:,iyy,ixx,iday] = linalg.cholesky(covv[:,:,iyy,ixx,iday]).T
 

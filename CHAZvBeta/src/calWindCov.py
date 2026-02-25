@@ -14,50 +14,53 @@ import pandas as pd
 import xarray as xr
 
 def createNetCDF(covMatrix,iy,xlong,xlat):
-        var = ['u200p2D','v200p2D','u850p2D','v850p2D']
-        nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
-        nc.createDimension('latitude',xlat.shape[0])
-        nc.createDimension('longitude',xlong.shape[0])
-        nc.createDimension('month',covMatrix.shape[1])
-        lats = nc.createVariable('latitude',np.dtype('float32').char,('latitude',))
-        lons = nc.createVariable('longitude',np.dtype('float32').char,('longitude',))
-        months = nc.createVariable('month',np.dtype('int32').char,('month',))
-        lats.units = 'degrees_north'
-        lons.units = 'degrees_east'
-        months.units = 'month_in_year'
-        lats[:] = xlat
-        lons[:] = xlong
-        months[:] = range(1,covMatrix.shape[1]+1,1)
+	var = ['u200p2D','v200p2D','u850p2D','v850p2D']
+	nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
+	nc.createDimension('latitude',xlat.shape[0])
+	nc.createDimension('longitude',xlong.shape[0])
+	nc.createDimension('month',covMatrix.shape[1])
+	lats = nc.createVariable('latitude',np.dtype('float32').char,('latitude',))
+	lons = nc.createVariable('longitude',np.dtype('float32').char,('longitude',))
+	months = nc.createVariable('month',np.dtype('int32').char,('month',))
+	lats.units = 'degrees_north'
+	lons.units = 'degrees_east'
+	months.units = 'month_in_year'
+	lats[:] = xlat
+	lons[:] = xlong
+	months[:] = range(1,covMatrix.shape[1]+1,1)
 
-        ### start to create variables
-        count = 0
-        for iv in range(len(var)):
-            for iiv in range(iv,len(var),1):
-                vname = var[iv][:-2]+var[iiv][:-2]
-                #print vname
-                var1 = nc.createVariable(vname,np.dtype('float32').char,('month','latitude','longitude'))
-                var1.units = '(ms-1)^2'
-                var1[:] = covMatrix[count,:,:,:]
-                count += 1
-        nc.close()
-        return()
+	### start to create variables
+	count = 0
+	for iv in range(len(var)):
+		for iiv in range(iv,len(var),1):
+			vname = var[iv][:-2]+var[iiv][:-2]
+			#print vname
+			var1 = nc.createVariable(vname,np.dtype('float32').char,('month','latitude','longitude'))
+			var1.units = '(ms-1)^2'
+			var1[:] = covMatrix[count,:,:,:]
+			count += 1
+	nc.close()
+	return()
 
 def fillinNaN(var,neighbors):
 	"""
-	replacing masked area using interpolation 
+	Replace masked areas using interpolation.
 	"""
 	for ii in range(var.shape[0]):
 		a = var[ii,:,:]
+
+		##TODO: how is count being used here? 
+		## I think it can be removed
 		count = 0
 		while np.any(a.mask):
 			a_copy = a.copy()
 			for hor_shift,vert_shift in neighbors:
-			    if not np.any(a.mask): break
-			    a_shifted=np.roll(a_copy,shift=hor_shift,axis=1)
-			    a_shifted=np.roll(a_shifted,shift=vert_shift,axis=0)
-			    idx=~a_shifted.mask*a.mask
-			    #print count, idx[idx==True].shape 
-			    a[idx]=a_shifted[idx]
+				if not np.any(a.mask): break
+				a_shifted=np.roll(a_copy,shift=hor_shift,axis=1)
+				a_shifted=np.roll(a_shifted,shift=vert_shift,axis=0)
+				idx=~a_shifted.mask*a.mask
+				#print count, idx[idx==True].shape 
+				a[idx]=a_shifted[idx]
 			count+=1
 		var[ii,:,:] = a
 	return var
@@ -194,8 +197,8 @@ def run_windCov():
 						#np.hstack([np.cov(eval(vname)[:,igrid],eval(vname1)[:,igrid])[0,1] \
 						#for igrid in range(u250p2D.shape[1])]).reshape([u250p.shape[1],u250p.shape[2]])
 					count += 1
-			print iy, im, count, vname, vname1
+			print(iy, im, count, vname, vname1)
 
 		createNetCDF(covMatrix,iy,xlong,xlat)
 		del covMatrix,u250p, u250p2D, u850p, u850p2D, v250p, v250p2D, v850p, v850p2D  
-	    	gc.collect()
+		gc.collect()

@@ -13,40 +13,40 @@ from netCDF4 import Dataset
 def createNetCDF(covMatrix,iy,xlong,xlat):
 	'''
 	This function writes wind covariance into netcdf file.
-        covMatrix: wind covariance matrix
-        iy: year in iteration
-        xlong: longitude points
-        xlat: latitude points
-        Returns netCDF file
+		covMatrix: wind covariance matrix
+		iy: year in iteration
+		xlong: longitude points
+		xlat: latitude points
+		Returns netCDF file
 	'''
 	# write wind covariance netcdf
-        var = ['u200p2D','v200p2D','u850p2D','v850p2D']
-        nc = Dataset(gv.pre_path+'Cov1_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
-        nc.createDimension('latitude',xlat.shape[0])
-        nc.createDimension('longitude',xlong.shape[0])
-        nc.createDimension('month',covMatrix.shape[1])
-        lats = nc.createVariable('latitude',np.dtype('float32').char,('latitude',))
-        lons = nc.createVariable('longitude',np.dtype('float32').char,('longitude',))
-        months = nc.createVariable('month',np.dtype('int32').char,('month',))
-        lats.units = 'degrees_north'
-        lons.units = 'degrees_east'
-        months.units = 'month_in_year'
-        lats[:] = xlat
-        lons[:] = xlong
-        months[:] = range(1,covMatrix.shape[1]+1,1)
+	var = ['u200p2D','v200p2D','u850p2D','v850p2D']
+	nc = Dataset(gv.pre_path+'Cov1_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
+	nc.createDimension('latitude',xlat.shape[0])
+	nc.createDimension('longitude',xlong.shape[0])
+	nc.createDimension('month',covMatrix.shape[1])
+	lats = nc.createVariable('latitude',np.dtype('float32').char,('latitude',))
+	lons = nc.createVariable('longitude',np.dtype('float32').char,('longitude',))
+	months = nc.createVariable('month',np.dtype('int32').char,('month',))
+	lats.units = 'degrees_north'
+	lons.units = 'degrees_east'
+	months.units = 'month_in_year'
+	lats[:] = xlat
+	lons[:] = xlong
+	months[:] = range(1,covMatrix.shape[1]+1,1)
 
-        ### start to create variables
-        count = 0
-        for iv in range(len(var)):
-            for iiv in range(iv,len(var),1):
-                vname = var[iv][:-2]+var[iiv][:-2]
-                
-                var1 = nc.createVariable(vname,np.dtype('float32').char,('month','latitude','longitude'))
-                var1.units = '(ms-1)^2'
-                var1[:] = covMatrix[count,:,:,:]
-                count += 1
-        nc.close()
-        return()
+	### start to create variables
+	count = 0
+	for iv in range(len(var)):
+		for iiv in range(iv,len(var),1):
+			vname = var[iv][:-2]+var[iiv][:-2]
+			
+			var1 = nc.createVariable(vname,np.dtype('float32').char,('month','latitude','longitude'))
+			var1.units = '(ms-1)^2'
+			var1[:] = covMatrix[count,:,:,:]
+			count += 1
+	nc.close()
+	return()
 
 
 
@@ -111,7 +111,7 @@ def run_preProcesses():
 	il2[il2==olon.shape[0]]=0 # periodical BL, so 360 is equal to 0 degree.
 	jl1[jl1<0]=0
 	jl2[jl2==olat.shape[0]]=olat.shape[0]-1
-	print 'done mapping', time.time()-time1
+	print('done mapping', time.time()-time1)
 
 
 	#### for covMatrix 
@@ -141,13 +141,13 @@ def run_preProcesses():
 	for iy in range(y1, y2+1):
 		arg_ym = np.argwhere((modely1m<=iy)&(modely2m>=iy)).ravel()[0]
 		if arg_ym != arg_y1:
-                        ds_uam = xr.open_dataset(df_sub_uam[arg_ym])
-                        ds_vam = xr.open_dataset(df_sub_vam[arg_ym])
-                        ds_hurm = xr.open_dataset(df_sub_hurm[arg_ym])
-                        arg_p250m = np.argwhere(ds_uam.level.values==250.).ravel()[0]
-                        arg_p500m = np.argwhere(ds_uam.level.values==500.).ravel()[0]
-                        arg_p700m = np.argwhere(ds_uam.level.values==700.).ravel()[0]
-                        arg_p850m = np.argwhere(ds_uam.level.values==850.).ravel()[0]
+			ds_uam = xr.open_dataset(df_sub_uam[arg_ym])
+			ds_vam = xr.open_dataset(df_sub_vam[arg_ym])
+			ds_hurm = xr.open_dataset(df_sub_hurm[arg_ym])
+			arg_p250m = np.argwhere(ds_uam.level.values==250.).ravel()[0]
+			arg_p500m = np.argwhere(ds_uam.level.values==500.).ravel()[0]
+			arg_p700m = np.argwhere(ds_uam.level.values==700.).ravel()[0]
+			arg_p850m = np.argwhere(ds_uam.level.values==850.).ravel()[0]
 			arg_y1 = arg_ym
 		time1 = time.time()
 		arg_tm = np.argwhere((ds_uam.time.dt.year.values==iy)).ravel()
@@ -226,7 +226,7 @@ def run_preProcesses():
 		nc.close()
 		if np.mod(iy,10)==0:
 			gc.collect()
-			print 'year'+int2str(iy,4),time.time()-time1
+			print('year'+int2str(iy,4),time.time()-time1)
 	return()
 
 def createNetCDF_A(A1,iy,im,xllon,xllat):
@@ -315,7 +315,7 @@ def run_preProcesses_A():
     il2[il2==lon.shape[0]]=0 # periodical BL, so 360 is equal to 0 degree.
     jl1[jl1<0]=0
     jl2[jl2==lat.shape[0]]=lat.shape[0]-1
-    print 'done mapping', time.time()-time1
+    print('done mapping', time.time()-time1)
 
     for iy in range(y1, y2+1):
         EXP='HIST' if iy<=2005 else 'RCP85'

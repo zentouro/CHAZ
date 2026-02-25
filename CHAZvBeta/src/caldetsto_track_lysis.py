@@ -160,19 +160,19 @@ def calIntensity(EXP,iy,ichaz):
 
     ### read coefficient from reanalysis data trainning,
     ### as well as recording the mean and STD
-   # with open (gv.opath,'rb') as f:
-#	 bt = pickle.load(f)
-#	 result_w = pickle.load(f) 
-#	 meanX_w_obs = pickle.load(f)
-#	 stdX_w_obs = pickle.load(f)
-#	 meanY_w_obs = pickle.load(f)
-#	 stdY_w_obs = pickle.load(f)
-#	 result_l = pickle.load(f) 
-#	 meanX_l_obs = pickle.load(f)
-#	 stdX_l_obs = pickle.load(f)
-#	 meanY_l_obs = pickle.load(f)
-#	 stdY_l_obs = pickle.load(f)
-#	 f.close()
+    # with open (gv.opath,'rb') as f:
+    # bt = pickle.load(f)
+    # result_w = pickle.load(f) 
+    # meanX_w_obs = pickle.load(f)
+    # stdX_w_obs = pickle.load(f)
+    # meanY_w_obs = pickle.load(f)
+    # stdY_w_obs = pickle.load(f)
+    # result_l = pickle.load(f) 
+    # meanX_l_obs = pickle.load(f)
+    # stdX_l_obs = pickle.load(f)
+    # meanY_l_obs = pickle.load(f)
+    # stdY_l_obs = pickle.load(f)
+    # f.close()
     bt2 = nc.Dataset(gv.opath,'r')
     result_wi = nc.Dataset(gv.ipath + 'result_w.nc', 'r')
     result_w = ma.getdata(result_wi['params'][:])
@@ -197,21 +197,21 @@ def calIntensity(EXP,iy,ichaz):
     #read the synthetic tracks
     global bt
     with open(gv.output_path+'trackPredictorsbt'+int2str(iy,4)+'_ens'+int2str(ichaz,3)+'.pik','r')as f:
-	 bt = pickle.load(f)
-	 f.close()
+        bt = pickle.load(f)
+        f.close()
     ### read mean and std from the HIST data
     #with open (gv.ipath+'/coefficient_meanstd.pik','r') as f:
-#	 dummy = pickle.load(f)
-#	 meanX_w = pickle.load(f)
-#	 stdX_w = pickle.load(f)
-#	 meanY_w = pickle.load(f)
-#	 stdY_w = pickle.load(f)
-#	 dummy = pickle.load(f)
-#	 meanX_l=pickle.load(f)
-#	 stdX_l = pickle.load(f)
-#	 meanY_l = pickle.load(f)
-#	 stdY_l = pickle.load(f)
-#    f.close()
+    # dummy = pickle.load(f)
+    # meanX_w = pickle.load(f)
+    # stdX_w = pickle.load(f)
+    # meanY_w = pickle.load(f)
+    # stdY_w = pickle.load(f)
+    # dummy = pickle.load(f)
+    # meanX_l=pickle.load(f)
+    # stdX_l = pickle.load(f)
+    # meanY_l = pickle.load(f)
+    # stdY_l = pickle.load(f)
+    # f.close()
     coeff_meanstd = nc.Dataset(gv.pre_path+'coefficient_meanstd.nc','r')
     meanX_w = ma.getdata(coeff_meanstd['meanX_w'][:])
     stdX_w = ma.getdata(coeff_meanstd['stdX_w'][:])
@@ -246,11 +246,11 @@ def calIntensity(EXP,iy,ichaz):
     new =da.map_blocks(get_stochastic,nS,chunks=(1,), dtype=nS.dtype)
     global iNN
     for iNN in range(nsto):
-	time1 = time.time()
-	with ProgressBar():
-	     n = new.compute(scheduler='synchronous',num_workers=5)
-	gc.collect()
-	#print iNN,time.time()-time1
+        time1 = time.time()
+        with ProgressBar():
+            n = new.compute(scheduler='synchronous',num_workers=5)
+        gc.collect()
+	    #print iNN,time.time()-time1
     del new
 
    # with open (gv.output_path+'bt_stochastic_det'+int2str(iy,4)+'_ens'+int2str(ichaz,3)+'.pik','w') as f:
