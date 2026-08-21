@@ -1,4 +1,4 @@
-name: chaz
+name: chaz_env
 
 channels: 
   - conda-forge
@@ -17,8 +17,6 @@ dependencies:
   - cartopy 
   - matplotlib
   - pooch
-  - numba
-  - netcdftime
 
   #Aux
   - tqdm
