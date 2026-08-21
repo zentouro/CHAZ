@@ -183,19 +183,20 @@ def TCgiSeeding (gxlon, gxlat, gi, climInitLon, climInitLat, climInitDate, ratio
         iix = gxlon.ravel()[r.ravel()]
         iiy = gxlat.ravel()[r.ravel()]
         
-        ## TODO: Is this an acceptable fix? 
-        ### if any values of iix or iiy are 0, re-roll
-        while np.any(iix == 0):
-            bad = (iix == 0)
-            ## re-roll indexes with value 0
-            r[bad] = custm.rvs(size=np.sum(bad))
-            ## recalulcate
-            iix[bad] = gxlon.ravel()[r[bad]]
+        ## Unncessary
+        # ## TODO: Is this an acceptable fix? 
+        # ### if any values of iix or iiy are 0, re-roll
+        # while np.any(iix == 0):
+        #     bad = (iix == 0)
+        #     ## re-roll indexes with value 0
+        #     r[bad] = custm.rvs(size=np.sum(bad))
+        #     ## recalulcate
+        #     iix[bad] = gxlon.ravel()[r[bad]]
 
-        while np.any(iiy == 0):
-            bad = (iiy == 0)
-            r[bad] = custm.rvs(size=np.sum(bad))
-            iiy[bad] = gxlat.ravel()[r[bad]]
+        # while np.any(iiy == 0):
+        #     bad = (iiy == 0)
+        #     r[bad] = custm.rvs(size=np.sum(bad))
+        #     iiy[bad] = gxlat.ravel()[r[bad]]
         
         
         ## randomly select day in month to assign each seed 
@@ -921,8 +922,10 @@ def get_seeding_ratio(fpath,iy1,iy2):
             gi = np.rollaxis(loadmat(tcgiFile)['TCGI'],2,0)
             #print iy, np.nansum(gi)
             if iy == iy1:
-                xlon =loadmat(tcgiFile)['lon']
-                xlat =loadmat(tcgiFile)['lat']
+                ## lons in tcgiFile may import as a dtype=uint16
+                ## force int16 for later
+                xlon =loadmat(tcgiFile)['lon'].astype(np.int16)
+                xlat =loadmat(tcgiFile)['lat'].astype(np.int16)
                 gxlon,gxlat = np.meshgrid(xlon,xlat)
             climInitLon,climInitLat,climInitDate = \
                 TCgiSeeding (gxlon,gxlat,gi,climInitLon,climInitLat,climInitDate,ratio,iy)
