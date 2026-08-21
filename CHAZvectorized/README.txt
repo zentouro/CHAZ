@@ -2,6 +2,7 @@ The Columbia HAZard model(CHAZ)
 ------------------------------------------------------
 Chia-Ying Lee (cl322@columbia.edu)
 Emma Schechter (es3522@columbia.edu) 7/17/21
+Miriam Nielsen (miriam.nielsen@columbia.edu) 8/21/26
 
 -------------------------------------------------------
 Overview of CHAZvBeta contents; preprocessing is flagged as 'True', 'output' has yet to be populated, and 'pre' has yet to be populated with r1i1p1_YYYY.nc, coefficientmeanstd.nc and A_YYYYMM.nc from preprocessing. 
@@ -27,3 +28,4 @@ Detail instructions please see: https://github.com/cl3225/CHAZ/blob/main/README.
 
 
 
+n.b., this README is static, it will be updated upon completion of CHAZ v2
