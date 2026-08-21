@@ -1,0 +1,6 @@
+/home/miriamn/CHAZ/CHAZvectorized/era5data/relative_humidity_2000.nc
+/home/miriamn/CHAZ/CHAZvectorized/era5data/temperature_2000.nc
+/home/miriamn/CHAZ/CHAZvectorized/era5data/u_component_of_wind_2000.nc
+/home/miriamn/CHAZ/CHAZvectorized/era5data/u_component_of_wind_200001_dailymean.nc
+/home/miriamn/CHAZ/CHAZvectorized/era5data/v_component_of_wind_2000.nc
+/home/miriamn/CHAZ/CHAZvectorized/era5data/v_component_of_wind_200001_dailymean.nc
