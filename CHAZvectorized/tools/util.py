@@ -43,8 +43,8 @@ def fix_coords(ds):
 		)	
 	return ds
 
-
-def date_interpolation(dateInput,fileInput):
+## original date interpolation
+def date_interpolation_original(dateInput,fileInput):
     """
     fileInput is a 3-d gloabl fields  with time-axis on the first column, eg. fileInput[it,ix,iy]
     the function return fields interpolated linearly to date on dateInput.
@@ -58,6 +58,9 @@ def date_interpolation(dateInput,fileInput):
           xp = [0, (date1-date0).days]
           ratio = np.interp(dfdays,xp,[0,1])
           fileOutput = fileInput[dateInput.month-1,:,:]*(1-ratio)+fileInput[dateInput.month,:,:]*(ratio)
+        ## 
+        #else if cov12 is not none:
+            #fileOutput = Cov12
        else:
           fileOutput= fileInput[dateInput.month-1,:,:]
     else:
@@ -71,6 +74,83 @@ def date_interpolation(dateInput,fileInput):
           ratio = np.interp(dfdays,xp,[0,1])
           fileOutput = fileInput[dateInput.month-2,:,:]*(1-ratio)+fileInput[dateInput.month-1,:,:]*ratio
     return fileOutput
+
+## updated date interpolation
+def date_interpolation(dateInput,fileInput):
+    '''
+     fileInput is a 3-d gloabl fields with time-axis on the first column, eg. fileInput[it,ix,iy]
+        the function return fields interpolated linearly to date on dateInput.
+        if dateInput.month is December, then it interpolates data from January of that year
+        if dateInput.month is January, then it interpolates data from December of that year
+    '''
+    ## second half of the month
+    if dateInput.day >= 15:
+        ## if not december
+        if dateInput.month < 12:
+            date0 = datetime(dateInput.year,dateInput.month,15,0,0)
+            date1 = datetime(dateInput.year,dateInput.month+1,15,0,0) 
+            dfdays = (dateInput-date0).days
+            xp = [0, (date1-date0).days]
+            ratio = np.interp(dfdays,xp,[0,1])
+            fileOutput = fileInput[dateInput.month-1,:,:]*(1-ratio)+fileInput[dateInput.month,:,:]*(ratio)
+        ## if December grab data from January of that same year 
+        else:
+            ## Dec
+            date0 = datetime(dateInput.year, 12, 15, 0, 0)
+
+            ## using Jan DATE of following calendar year to 
+            ## calculate interpolation interval.
+            date1 = datetime(dateInput.year + 1, 1, 15, 0, 0)
+
+            dfdays = (dateInput - date0).days
+            xp = [0, (date1 - date0).days]
+
+            ratio = np.interp(dfdays, xp, [0, 1])
+
+            ## December and January data are BOTH from dateInput.year
+            ## swap from month counting to start-from-0, so 11 = december, 0 = january
+            ## but using the same fileInput for both 
+            fileOutput = (
+                fileInput[0, :, :] * (ratio) + fileInput[11, :, :] * (1 - ratio)
+            )  
+    ## first half of the month 
+    else:
+        if dateInput.month == 1: 
+            # December and January data are from the SAME year
+            date0 = datetime(dateInput.year, 12, 15, 0, 0)
+            date1 = datetime(dateInput.year, 1, 15, 0, 0)
+
+            # Since date1 is technically before date0, create a
+            # virtual January 15 of the following year for the
+            # interpolation calculation.
+            date1_interp = datetime(dateInput.year + 1, 1, 15, 0, 0)
+
+            # Shift January dates into the virtual interpolation year
+            dateInput_interp = datetime(
+                dateInput.year + 1,
+                dateInput.month,
+                dateInput.day,
+                0, 0
+            )
+
+            dfdays = (dateInput_interp - date0).days
+            xp = [0, (date1_interp - date0).days]
+
+            ratio = np.interp(dfdays, xp, [0, 1])
+
+            fileOutput = (
+                fileInput[11, :, :] * (1 - ratio)
+                + fileInput[0, :, :] * ratio
+            )
+            
+        else: 
+            date0 = datetime(dateInput.year,dateInput.month-1,15,0,0)
+            date1 = datetime(dateInput.year,dateInput.month,15,0,0)
+            dfdays = (dateInput-date0).days
+            xp = [0, (date1-date0).days]
+            ratio = np.interp(dfdays,xp,[0,1])
+            fileOutput = fileInput[dateInput.month-2,:,:]*(1-ratio)+fileInput[dateInput.month-1,:,:]*ratio
+    return fileOutput    
 
 
 
