@@ -327,7 +327,7 @@ def removeland(iS):
 
 class fst2bt(object):
     """
-      convert data format from fst to be format of bt object.
+    convert data format from fst to be format of bt object.
     """
     def __init__(self,data):
         self.StormId = np.arange(0,data['lon'].shape[1],1)
@@ -518,6 +518,7 @@ def getSpeedDir(iiS,block_id=None):
              getStormTranslation(bt.StormLon[it1:it2,iS],\
              bt.StormLat[it1:it2,iS],bt.Time[it1:it2,iS])
     return iS
+
 def calCoefficient_water_guess(ty1, ty2, ih):
     """
     calculate first guess coefficient from OLS

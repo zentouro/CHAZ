@@ -8,7 +8,6 @@
 import warnings
 warnings.filterwarnings('ignore')  # Suppress all warnings
 
-
 from scipy.io import loadmat, netcdf_file
 
 def get_landmask(filename):
@@ -32,44 +31,41 @@ def get_landmask(filename):
 ### Experiment settings
 Model = 'ERA5'
 ENS = 'r1i1p1f1'
-TCGIinput = 'TCGI_CRH_PI'       # or "TCGI_SD_RI" or 'TCGI_CRH'
+TCGIinput = 'TCGI_CRH_PI'          # or "TCGI_SD_RI" or 'TCGI_CRH'
 CHAZ_ENS_0 = 0           
-CHAZ_ENS = 15                    # Number of track realizations.  
-CHAZ_Int_ENS = 40                # Number of intensity realizations
-#PImodelname = 'ERA5'            ### No longer needed
+CHAZ_ENS = 1                      # Number of ensemble realizations.  
+CHAZ_Int_ENS = 40                  # Number of intensity realizations
 
 ### CHAZ parameters
-#monthlycsv = '/home/miriamn/CHAZ/CHAZvectorized/era5data/list1.txt' #'era5data/list1.txt'                    
-#dailycsv = '/home/miriamn/CHAZ/CHAZvectorized/era5data/list1.txt' #'era5data/list1.txt'
-
-## ERA5 data from /xpt/taroko.local/data0/clee/ERA5/2D
-monthlycsv = '/home/miriamn/CHAZ/CHAZvectorized/era5data/list2.txt'
-dailycsv = '/home/miriamn/CHAZ/CHAZvectorized/era5data/list2.txt'
+### TODO: describe how to create these 
+monthlycsv = '/home/miriamn/CHAZ/CHAZvectorized/list.txt'
+dailycsv = '/home/miriamn/CHAZ/CHAZvectorized/list.txt'
 
 uBeta = -1.5
 vBeta = 2.0
 survivalrate = 0.78
 #seedN = 1                              # annual seeding rate for random seeding, not yet ready to use
-seedN = 1000                            # what is in the tutorial, not sure if this will break things     
+seedN = 1000                                 
 landmaskfile = 'input/landmask.nc'      
-ipath = 'input/'                        
-opath = 'input/bt_global_predictors.nc'
+ipath = 'input/'                        ## ipath contains input data from observations (best tracks for all the basins from IBTrACS)
+opath = 'input/bt_global_predictors.nc' ## and a global best track with intial predictors 
 
-## output for preprocessing data and/or to import from for CHAZ (when data loaded locally)
-pre_path = '/home/miriamn/CHAZ/CHAZvectorized/pre/'   
+## Preprocessing output path AND
+## CHAZ import path
+pre_path = '/data0/miriamn/CHAZvectorized/pre/'
 ## when running chaz in beta/use known pre-processing data                        
 #pre_path = '/xpt/taroko.local/data0/clee/ERA5/wdir-Landmask075_20250514/'  
-#  
-output_path = 'output/'     ## output of CHAZ run
+
+## CHAZ output path
+output_path = '/data0/miriamn/CHAZvectorized/output/'
 
 ### local diretory preprocessing limited to year 2000-2009
 ### can expand when using known preprocessing 
 ### TODO: update list/preprocessing pointers to run on full timeseries 
-Year1 = 2000
-Year2 = 2009
+Year1 = 1950
+Year2 = 1952
 
-
-### UPDATING LANDMASK
+### Defining landmask
 llon, llat,lldmask = get_landmask(landmaskfile)
 ldmask = lldmask[::-24,  ::24]          ## 2º
 ldldmask = lldmask[::-9, ::9]           ## .75º [used in module_GenBamPred.bam and .get_predictors]
@@ -78,35 +74,53 @@ ldlat = llat[::9]
 lldmask = lldmask[::-1,:]               ## flips latitudes so they are in the right order
 
 
+### TODO: update this to v2 versus v1
 ####################################################
 #### use Beta version of CHAZ with optimized    ####
 #### and vectorized code                        ####
 ####                                            ####
 #####################################################
-
-vectorize = True    ## applied to both preprocess AND CHAZ
+vectorize = True    ## applied to both preprocess AND CHAZ [use the updated vectorized version of CHAZ, rather than the original]
 
 ## for CHAZ
 random_seed = 42
 local_random = False 
 
+
+## UPDATE TO LOGGING
+## output progress and timing logs 
+log_path = '/logs/'
+## log_level = TK 
+
 # debugging/verbose
-debugging = True      ## select True to include debug print statements and file saves     --  # partially implemented
+debugging = False     ## select True to include debug print statements and file saves     --  # partially implemented
 quiet = False         ## select True to suppress print statements while running           --  # partially implemented
-overwrite = False     ## select True to overwrite existing output                         -- # partially implemented (for CHAZ)
+overwrite = True      ## select True to overwrite existing output                         -- # partially implemented (for CHAZ)
+                      ## TODO: add overwrite functionality to preprocessing
+
 
 #####################################################
-# Preprocesses                                   ####
-# ignore variables when run Preprocess is False ####
+## Training                                       ###
+## ignore variables when runTraining = False      ###
+## not yet implemented                            ###
 #####################################################
-runPreprocess = False 
+#runTraining = True
+#
+
+
+#####################################################
+## Preprocesses                                   ###
+## ignore variables when runPreprocess = False    ###
+#####################################################
+runPreprocess = True 
 calWind = True 
 calpreProcess = True 
 calA = True
-###################################################
-# CHAZ                                         ####
-# ignore variables when run CHAZ is False     ####
-###################################################
+
+#####################################################
+## CHAZ                                           ###
+## ignore variables when runCHAZ = False          ###
+#####################################################
 runCHAZ = True
 ### genesis 
 calGen = True   

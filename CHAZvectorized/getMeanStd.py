@@ -17,9 +17,13 @@ from scipy import stats
 from tools.util import argminDatetime
 from tools.util import int2str,date_interpolation
 from scipy.io import loadmat, netcdf_file
-from datetime import datetime,timedelta
 from tools.regression4 import calMultiRegression_coef_mean_water
 from tools.regression4 import calMultiRegression_coef_mean_land
+
+'''
+Outputs `coefficient_meanstd.nc` which is necessary to run preprocessing
+'''
+
 
 def getLonLatfromDistance(lonInit,latInit,dx,dy):
     er = 6371000 #km

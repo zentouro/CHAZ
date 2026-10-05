@@ -8,6 +8,9 @@
 /CHAZvectorized/input/*.nc
 /CHAZvectorized/input/original
 /CHAZvectorized/input/updating
+/CHAZvectorized/input/original/*.nc
+/CHAZvectorized/input/updating/*.nc
+
 
 ### exclude testing and scratch files
 /CHAZvectorized/scratch.ipynb

@@ -1,4 +1,4 @@
-### UPDATED-VECTORIZED BETA
+### VERSION 2 of caldesto_track_lysis
 
 #!/usr/bin/env python
 ###
@@ -555,7 +555,7 @@ def clean_up_save(bt, iy, ichaz):
     # print("After determin computed:", np.sum(np.any(~np.isnan(bt.determin), axis=0)))
     # print("After stochastic computed:", np.sum(np.any(~np.isnan(bt.stochastic), axis=(0,2))))
 
-    ## don't totally understand this loop
+    
     for iens in range(0,1):
         count1 = 0
         if count1 ==0:
@@ -753,7 +753,7 @@ def calIntensity(iy, ichaz):
     bt2 = xr.open_dataset(gv.opath)
     ## unused, commenting out 
     #observed_data_ds = xr.open_dataset(gv.ipath + 'observed_data.nc')
-    coefficient_meanstd_ds = xr.open_dataset(gv.pre_path + 'coefficient_meanstd.nc')
+    coefficient_meanstd_ds = xr.open_dataset(gv.ipath + 'coefficient_meanstd.nc')
     result_w_ds = xr.open_dataset(gv.ipath + 'result_w.nc')
     result_l_ds = xr.open_dataset(gv.ipath + 'result_l.nc')
 

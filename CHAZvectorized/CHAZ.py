@@ -6,17 +6,17 @@ import dask.array as da
 import os
 import src.module_riskModel as mrisk
 import src.module_GenBamPred as GBP
-import src.module_GenBamPred_vectorized as GBP_vectorized
+import src.module_GenBamPred_v2 as GBP_vectorized
 import Namelist as gv
 import src.caldetsto_track_lysis as CHAZ_detsto
-import src.caldetsto_track_lysis_vectorized as CHAZ_detsto_vectorized
+import src.caldetsto_track_lysis_v2 as CHAZ_detsto_vectorized
 
 import src.calWindCov as calWindCov
 import src.preprocess as preprocess
 import src.calA as calA
 
-import src.calWindCov_vectorized as calWindCov_vectorized
-import src.preprocess_vectorized as preprocess_vectorized
+import src.calWindCov_v2 as calWindCov_v2
+import src.preprocess_v2 as preprocess_v2
 
 from tools.util import int2str
 
@@ -40,12 +40,13 @@ if gv.runPreprocess:
 
    if not gv.vectorize: 
       t0 = time.time()
-      print('***STOCK PREPROCESSING***')
+      if not gv.quiet: print('***STOCK PREPROCESSING***')
       if gv.calWind:
          if not gv.quiet: print('calWind')
          calWindCov.run_windCov()
       t1 = time.time()
       if gv.calpreProcess:
+         if not gv.quiet: print('calpreProcess')
          ## highest speedup priority
          preprocess.run_preProcesses()
       t2 = time.time()
@@ -57,17 +58,17 @@ if gv.runPreprocess:
 
    if gv.vectorize: 
       t0 = time.time()
-      print('***PREPROCESSING using Beta Update ***')
+      if not gv.quiet: print('***PREPROCESSING using Beta Update ***')
       if gv.calWind:
          if not gv.quiet: print('calWind')
          #calWindCov.run_windCov()
-         calWindCov_vectorized.run_windCov()
+         calWindCov_v2.run_windCov()
       t1 = time.time()
       if gv.calpreProcess:
          if not gv.quiet: print('calpreProcess')
          ## highest priority
          #preprocess.run_preProcesses()
-         preprocess_vectorized.run_preProcesses()
+         preprocess_v2.run_preProcesses()
       t2 = time.time()
       if gv.calA:
          if not gv.quiet: print('calA')
@@ -75,18 +76,15 @@ if gv.runPreprocess:
          calA.run_calA()
       t3 = time.time()
 
-   print(f'Preprocess run times: calWind={t1-t0:.2f}  calpreProcess={t2-t1:.2f}  calA={t3-t2:.2f}')
+   if not gv.quiet: print(f'Preprocess run times: calWind={t1-t0:.2f}  calpreProcess={t2-t1:.2f}  calA={t3-t2:.2f}')
 
-
-   
 
 #######################
 ### Run CHAZ       ####
 #######################
 if gv.runCHAZ:
    if not gv.vectorize:
-      print('*** Running stock CHAZ ***')
-
+      if not gv.quiet: print('*** Running stock CHAZ ***')
       ### get seeding ratio in this experiment
       if gv.TCGIinput != 'random':
          if not gv.quiet: print ('get Seeding ratio for', gv.Model, gv.ENS)

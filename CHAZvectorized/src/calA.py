@@ -45,6 +45,7 @@ def createNetCDF(A1,iy,im,xllon,xllat):
 def run_calA():
 	for iy in range(gv.Year1, gv.Year2+1):
 		filename = gv.pre_path+ 'Cov1_'+int2str(iy,4)+'.nc'
+	
 		nc = Dataset(filename,'r',format='NETCDF4')
 		#nc = Dataset(filename,'r',format='NETCDF3_CLASSIC')
 		xllon = nc.variables['longitude'][:]
@@ -58,9 +59,23 @@ def run_calA():
 				cov[vname][:,0,:] = cov[vname][:,1,:]
 				cov[vname][:,-1,:] = cov[vname][:,-2,:]
 		nc.close()
+		# ########## CYL
+		# if iy > gv.Year1
+		# 		filename_preY = gv.pre_path+ 'Cov1_'+int2str(iy-1,4)+'.nc'
+		# 		ncpre = Dataset(filename_preY,'r',format='NETCDF4')
+		# 		read cov01
+		# 	else:
+		# 		cov01 = None
+		# 	if iy < gv.Year2:
+		# 		filename_aftY = gv.pre_path+ 'Cov1_'+int2str(iy+1,4)+'.nc'
+		# 		read cov12
+		# 	else
+		# 		cov12 = None
+		# ########## CYL
 
 		for im in range(1,13,1):
-			time1 = time.time()
+			#time1 = time.time()
+			## number of days in the month (im)
 			nday = monthrange(iy,im)[1]
 			### for each month has one F, this is where the randomness from
 			cov2d = {}
@@ -69,8 +84,10 @@ def run_calA():
 					vname = var[iv]+var[iiv]
 					vname1 = var[iv]+var[iiv]
 					cov2d[vname1] = np.dstack([date_interpolation(datetime(iy,im,iday,0,0),cov[vname1]) for iday in range(1,nday+1,1)])
+					## possible fix: 
+					######cov2d[vname1] = np.dstack([date_interpolation(datetime(iy,im,iday,0,0),cov[vname1],cov01[vname1],cov12[vname1]) for iday in range(1,nday+1,1)])
 
-			time1 = time.time()
+			#time1 = time.time()
 
 			## can't directly call a dictionary key
 			#a = np.array(cov2d[cov2d.keys()[0]].shape).tolist()
@@ -92,7 +109,7 @@ def run_calA():
 			covv[2:,2,:,:,:] = covm2d[7:9,:,:,:]
 			covv[3,3,:,:,:] = covm2d[9,:,:,:]
 			#print 'finish interp cov data', time.time()-time1
-			time1 = time.time()
+			#time1 = time.time()
 
 			A = np.zeros(covv.shape)
 			A1 = np.zeros([10]+a)
@@ -117,7 +134,7 @@ def run_calA():
 			A1[8,:,:,:] = A[3,2,:,:,:]
 			A1[9,:,:,:] = A[3,3,:,:,:]
 			#print 'finish cal A data', time.time()-time1
-			time1 = time.time()
+			#time1 = time.time()
 			createNetCDF(A1,iy,im,xllon,xllat)
 			#print 'finish saving A data', time.time()-time1
 			gc.collect()

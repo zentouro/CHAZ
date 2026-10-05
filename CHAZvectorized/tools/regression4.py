@@ -1108,7 +1108,7 @@ def getPrediction_oneTime(bt,meanX,meanY,stdX,stdY,it,index,ih,coeffFile,predict
    dy = dy*stdY+meanY
    return dy 
 
-## is this used? 
+## use this to retrain
 def getPrediction_v0input(bt,meanX,meanY,stdX,stdY,it,index,fstperiod,coeffFile,predictors,TimeDepends,v0,dvdt):
    '''
    gets prediction 
@@ -1130,6 +1130,7 @@ def getPrediction_v0input(bt,meanX,meanY,stdX,stdY,it,index,fstperiod,coeffFile,
    h1.append(bt.Time[it,index])
    for ih in fstperiod:
       h1.append(bt.Time[it,index]+timedelta(hours = ih))
+      ## divide time step by 12 hours? 
       ll = a[ih/12].rstrip().rsplit()
       lT = ih/6
       dy = np.float(ll[1])

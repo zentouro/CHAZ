@@ -120,53 +120,7 @@ def TCgiSeeding (gxlon, gxlat, gi, climInitLon, climInitLat, climInitDate, ratio
     for im in range(12):
         xk, pk = np.arange(gi[im,:,:].size), gi[im,:,:].ravel()
 
-        ####### UPDATING
-
-        ## TODO: find way to fix when multiple runs x1 produces empty/full of nans 
-        ## remove points where gi OR the coordinate grids are NaN
-        # lon_flat = gxlon.ravel()
-        # lat_flat = gxlat.ravel()
-        # valid = np.isfinite(pk) & np.isfinite(lon_flat) & np.isfinite(lat_flat)
-        # xk, pk = xk[valid], pk[valid]
-
-        # custm = stats.rv_discrete(name='custm', values=(xk, pk/pk.sum()), seed=rng)
-
-        # n_seeds = np.int_(np.rint(pk.sum()*ratio))
-        # r = custm.rvs(size=n_seeds)
-
-        # iix = gxlon.ravel()[r.ravel()]
-        # iiy = gxlat.ravel()[r.ravel()]
-
-        # iday = rng.choice(np.arange(calendar.monthrange(iy,im+1)[1]),
-        #                    size=n_seeds, replace=True)
-
-        # if iday.size > 0:
-        #     for id in range(iday.size):
-
-        #         lon0, lat0 = iix[id], iiy[id]
-
-        #         ## belt-and-suspenders: skip if somehow still NaN/inf
-        #         if not (np.isfinite(lon0) and np.isfinite(lat0)):
-        #             continue
-
-        #         ## linspace guarantees a fixed, non-empty length regardless
-        #         ## of float rounding, unlike arange
-        #         x1 = np.linspace(lon0-1, lon0+1, 201)
-        #         y1 = np.linspace(lat0-1, lat0+1, 201)
-
-        #         xx = rng.choice(x1, 1)
-        #         yy = rng.choice(y1, 1)
-
-        #         if gv.debugging: print(xx)
-        #         if gv.debugging: print(yy)
-
-        #         climInitDate.append(datetime(iy,im+1,iday[id]+1,0,0))
-        #         climInitLon.append(xx)
-        #         climInitLat.append(yy)
-
-        ## OLD
-
-        ### this maybe isn't working as well as it could 
+        
         ## remove NaNs
         dummy = xk*pk
         xk, pk = xk[dummy==dummy], pk[dummy==dummy] # (dummy==dummy is False for NaNs)
@@ -183,26 +137,9 @@ def TCgiSeeding (gxlon, gxlat, gi, climInitLon, climInitLat, climInitDate, ratio
         iix = gxlon.ravel()[r.ravel()]
         iiy = gxlat.ravel()[r.ravel()]
         
-        ## Unncessary
-        # ## TODO: Is this an acceptable fix? 
-        # ### if any values of iix or iiy are 0, re-roll
-        # while np.any(iix == 0):
-        #     bad = (iix == 0)
-        #     ## re-roll indexes with value 0
-        #     r[bad] = custm.rvs(size=np.sum(bad))
-        #     ## recalulcate
-        #     iix[bad] = gxlon.ravel()[r[bad]]
-
-        # while np.any(iiy == 0):
-        #     bad = (iiy == 0)
-        #     r[bad] = custm.rvs(size=np.sum(bad))
-        #     iiy[bad] = gxlat.ravel()[r[bad]]
-        
-        
         ## randomly select day in month to assign each seed 
         ## update to use set rng
         iday = rng.choice(np.arange(calendar.monthrange(iy,im+1)[1]), size=np.int_(np.rint(pk.sum()*ratio)), replace=True)
-
 
         # if there are days assigned a seed in the month:
         if iday.size>0:
@@ -211,7 +148,7 @@ def TCgiSeeding (gxlon, gxlat, gi, climInitLon, climInitLat, climInitDate, ratio
                 ## this is occasionally generating empty arrays
                 x1 = np.arange(iix[id]-1,iix[id]+1.01, 0.01)
                 y1 = np.arange(iiy[id]-1,iiy[id]+1.01, 0.01)
-                
+               
                 ## update to use set rng
                 xx = rng.choice(x1, 1)
                 yy = rng.choice(y1, 1)
@@ -223,7 +160,6 @@ def TCgiSeeding (gxlon, gxlat, gi, climInitLon, climInitLat, climInitDate, ratio
                 climInitDate.append(datetime(iy,im+1,iday[id]+1,0,0))
                 climInitLon.append(xx)
                 climInitLat.append(yy)
-
 
     return climInitLon, climInitLat, climInitDate
 
@@ -739,7 +675,6 @@ def func_last(x):
         return x.last_valid_index()
 
 
-## original
 def get_predictors(iiS,block_id=None):
     '''
     This function returns an object containing the predictors.
@@ -774,6 +709,7 @@ def get_predictors(iiS,block_id=None):
     londis = 2*np.pi*er*np.cos(xxlat/180*np.pi)/360
     distance = np.empty(xxlong.shape,dtype=float)     
 
+    ### TODO: Double check this is what I want to be doing here still
     ### using 0.75 ldmask ###
     ldxxlong,ldxxlat = np.meshgrid(gv.ldlon,gv.ldlat)
     ######
@@ -954,9 +890,11 @@ def getSeeding(fpath,iy,ratio):
     tcgiFile = fpath+gv.TCGIinput+'_'+int2str(iy,4)+'.mat'
     gi = np.rollaxis(loadmat(tcgiFile)['TCGI'],2,0)
 
+    ## lons in tcgiFile may import as a dtype=uint16
+    ## force int16 for later
     # Load longitude and latitude data
-    xlon =loadmat(tcgiFile)['lon']
-    xlat =loadmat(tcgiFile)['lat']
+    xlon =loadmat(tcgiFile)['lon'].astype(np.int16)
+    xlat =loadmat(tcgiFile)['lat'].astype(np.int16)
 
     # Create a meshgrid of longitude and latitude
     gxlon,gxlat = np.meshgrid(xlon,xlat)

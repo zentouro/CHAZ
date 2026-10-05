@@ -61,7 +61,7 @@ class bstinfo(object):
 		self.dVdt[self.dVdt==0]='NaN'
 		self.dVdt[self.dVdt==0]='NaN'
 		self.dVdt[2::,:]=self.StormMwspd[2::,:]-self.StormMwspd[0:-2,:]
-		self.dPdt[1::,:]=self.StormMwspd[1::,:]-self.StormMwspd[0:-1,:]
+		self.dPdt[1::,:]=self.StormMwspd[1::,:]-self.StormMwspd[0:-1,:] ### shouldn't this be StormMslp? for pressure?
 
 		yyyy=np.array(yyyy,dtype='int')
 		mm=np.array(mm,dtype='int')
@@ -170,6 +170,207 @@ class read_ibtracs(object):
 		self.dist2land = dist2land
 		self.month = month
 
+# class read_ibtracs_v4(object):
+# 	"""
+# 	a function read /data2/clee/bttracks/IBTrACS.ALL.v04r00.nc
+# 	netCDF4 library is required
+# 	we use all USA agency - usa_lat, usa_lon, etc 
+# 	atl - NHC ATL
+# 	enp - NHC ENP
+# 	wnp,sh,ni - JTWC for the rest: SH, IO, and WPC
+# 	'global', it is reading all data
+# 	lon is change to the range from 0 to 360
+# 	to do task: use xarray to have better time calculations
+# 	data = xr.to_nedcdf(filename)
+# 	"""
+# 	def __init__(self,ncFileName,basins,gap):
+# 		#ncFileName = '/data2/clee/bttracks/IBTrACS.ALL.v04r00.nc'
+# 		#nc = Dataset(ncFileName,'r', format='NETCDF3_CLASSIC')
+# 		nc = Dataset(ncFileName,'r', format='NETCDF4')
+# 		sourceN = []
+# 		if 'atl' in basins:
+# 			sourceN.extend(['NA'])
+# 		if 'wnp' in basins:
+# 			sourceN.extend(['WP'])
+# 		if 'sh' in basins:
+# 			sourceN.extend(['SA','SP','SI'])
+# 		if 'ni' in basins:
+# 			sourceN.extend(['NI'])
+# 		if 'enp' in basins:
+# 			sourceN.extend(['EP'])
+# 		if 'global' in basins:
+# 			sourceN = ['NA','WP','SA','SP','SI','NI','EP']
+# 		sourceN = np.array(sourceN)
+# 		arg=[]
+# 		for i in range(sourceN.shape[0]):
+# 			arg.extend(np.argwhere((nc.variables['basin'][:,0,0]==sourceN[i][0])&
+# 				(nc.variables['basin'][:,0,1]==sourceN[i][1])).ravel().tolist()) 
+# 		arg = np.array(arg)
+# 		print(sourceN,basins)
+# 		#print(arg)
+# 		lon = nc.variables['usa_lon'][:][arg,::gap].T
+# 		lat = nc.variables['usa_lat'][:][arg,::gap].T
+# 		wspd = nc.variables['usa_wind'][:][arg,::gap].T
+# 		days = nc.variables['time'][:][arg,::gap].T
+# 		names = nc.variables['name'][:][arg,:].T
+# 		stormID = nc.variables['number'][:][arg]
+# 		dist2land = nc.variables['dist2land'][:][arg,::gap].T
+# 		trspeed = nc.variables['storm_speed'][:][arg,::gap].T
+# 		trdir = nc.variables['storm_dir'][:][arg,::gap].T
+# 		year = nc.variables['season'][:][arg]
+# 		times = nc.variables['iso_time'][:][arg,::gap].T
+
+# 		nNaN = np.argwhere(np.nanmax(np.array(lon),axis=0)!=-9999.).ravel()
+# 		lon = lon[:,nNaN]
+# 		lat = lat[:,nNaN]
+# 		wspd = wspd[:,nNaN]
+# 		days = days[:,nNaN]
+# 		times = times[:,:,nNaN]
+# 		names = names[:,nNaN]
+# 		stormID = stormID[nNaN]
+# 		dist2land = dist2land[:,nNaN]
+# 		trspeed = trspeed[:,nNaN]
+# 		trdir = trdir[:,nNaN]
+# 		year = year[nNaN]
+
+# 		a = np.nanmax(wspd,axis=0)
+# 		arg = np.argwhere(a==a)[:,0]
+# 		lon = np.array(lon[:,arg])
+# 		lat = np.array(lat[:,arg])
+# 		year = year[arg]
+# 		wspd = np.float_(np.array(wspd[:,arg]))
+# 		days = np.array(days[:,arg])
+# 		dist2land = np.array(dist2land[:,arg])
+# 		wspd[wspd==-9999.] = np.float('nan')
+# 		lon[lon==-9999.] = np.float('nan')
+# 		lat[lat==-9999.] = np.float('nan')
+# 		stormID = np.array(stormID[arg])
+# 		names = np.array(names[:,arg])
+# 		trspeed = np.array(trspeed[:,arg])
+# 		trdir = np.array(trdir[:,arg])
+# 		times = np.array(times[:,:,arg])
+
+# 		lon[lon<0]=lon[lon<0]+360
+# 		self.wspd = wspd
+# 		self.lon = lon
+# 		self.lat = lat
+# 		self.year = year
+# 		self.days = days
+# 		self.stormID = stormID
+# 		self.names = names
+# 		self.dist2land = dist2land
+# 		self.year = year
+# 		self.trspeed = trspeed
+# 		self.trdir = trdir
+# 		self.times = times
+
+
+### pulled this updated version from Sydney's code 
+
+#/usr/bin/env python
+import numpy as np
+import copy
+from netCDF4 import Dataset
+from datetime import datetime,timedelta
+import xarray as xr
+import pandas as pd
+
+
+class read_ibtracs(object):
+	"""
+	a function read /crunch/c1/clee/tracks/Allstorms.ibtracs_all.v03r08.nc
+	atl - NHC ATL
+	enp - NHC ENP
+	wnp,sh,ni - JTWC for the rest: SH, IO, and WPC 
+	'global', it is reading all data
+	lon is change to the range from 0 to 360
+	to do task: use xarray to have better time calculations
+	data = xr.to_nedcdf(filename)
+	"""
+	def __init__(self,ncFileName,basins):
+		#ncFileName = '/crunch/c1/clee/tracks/Allstorms.ibtracs_all.v03r08.nc'
+		nc = Dataset(ncFileName,'r', format='NETCDF3_CLASSIC')
+		sourceN = []
+		if 'atl' in basins:
+			sourceN.append(0)
+		elif 'wnp' in basins:
+			sourceN.append(10)
+		elif 'sh' in basins:
+			sourceN.append(9)
+		elif 'ni' in basins:
+			sourceN.append(13)			
+		elif 'enp' in basins:
+			sourceN.append(15)
+		elif 'global' in basins:
+			sourceN = np.array([0,9,10,13,15])
+		sourceN = np.array(sourceN)
+		print (sourceN,basins)
+		if sourceN.size == 1:
+			lon = nc.variables['source_lon'][:,:,sourceN[0]].T
+			lat = nc.variables['source_lat'][:,:,sourceN[0]].T
+			wspd = nc.variables['source_wind'][:,:,sourceN[0]].T
+			days = nc.variables['source_time'][:,:].T
+			names = nc.variables['name'][:,:].T
+			stormID = nc.variables['numObs'][:]
+			dist2land = nc.variables['dist2land'][:,:].T
+		else:
+			count = 0
+			for isource in sourceN:
+				if count == 0:
+					lon = nc.variables['source_lon'][:,:,isource].T
+					lat = nc.variables['source_lat'][:,:,isource].T
+					wspd = nc.variables['source_wind'][:,:,isource].T
+					days = nc.variables['source_time'][:,:].T
+					names = nc.variables['name'][:,:].T
+					stormID = nc.variables['numObs'][:]
+					dist2land = nc.variables['dist2land'][:,:].T
+				else:
+					lon = np.hstack([lon,nc.variables['source_lon'][:,:,isource].T])
+					lat = np.hstack([lat,nc.variables['source_lat'][:,:,isource].T])
+					wspd = np.hstack([wspd,nc.variables['source_wind'][:,:,isource].T])
+					days = np.hstack([days,nc.variables['source_time'][:,:].T])
+					names = np.hstack([names,nc.variables['name'][:,:].T])
+					dist2land = np.hstack([dist2land,nc.variables['dist2land'][:,:].T])
+					stormID = np.hstack([stormID,nc.variables['numObs']])
+				count += 1
+		nNaN = np.argwhere(np.nanmax(np.array(lon),axis=0)!=-30000.).ravel()
+		lon = lon[:,nNaN]
+		lat = lat[:,nNaN]
+		wspd = wspd[:,nNaN]
+		days = days[:,nNaN]
+		names = names[:,nNaN]
+		stormID = stormID[nNaN]
+		dist2land = dist2land[:,nNaN]
+		year = np.zeros(wspd.shape[1])
+		count = 0
+		print (nNaN.shape)
+		for i in range(nNaN.shape[0]):
+			year[i] = (datetime(1858,11,17,0,0)+timedelta(days=np.array(days)[0,i])).year
+
+		a = np.nanmax(wspd,axis=0)
+		arg = np.argwhere(a==a)[:,0]
+		lon = np.array(lon[:,arg])
+		lat = np.array(lat[:,arg])
+		year = year[arg]
+		wspd = np.array(wspd[:,arg])
+		days = np.array(days[:,arg])
+		dist2land = np.array(dist2land[:,arg])
+		wspd[wspd==-9990.] = np.float_('nan')
+		lon[lon==-30000.] = np.float_('nan')
+		lat[lat==-30000.] = np.float_('nan')
+		stormID = np.array(stormID[arg])
+		names = np.array(names[:,arg])
+		lon[lon<0]=lon[lon<0]+360
+		self.wspd = wspd
+		self.lon = lon
+		self.lat = lat
+		self.year = year
+		self.days = days
+		self.stormID = stormID
+		self.names = names
+		self.dist2land = dist2land
+
+#Sydney - Modifying to break SH down into SA, SP, and SI as well for rainfall climatology
 class read_ibtracs_v4(object):
 	"""
 	a function read /data2/clee/bttracks/IBTrACS.ALL.v04r00.nc
@@ -178,8 +379,11 @@ class read_ibtracs_v4(object):
 	atl - NHC ATL
 	enp - NHC ENP
 	wnp,sh,ni - JTWC for the rest: SH, IO, and WPC
+    sa, sp, si for basins in SH
 	'global', it is reading all data
+
 	lon is change to the range from 0 to 360
+
 	to do task: use xarray to have better time calculations
 	data = xr.to_nedcdf(filename)
 	"""
@@ -187,32 +391,47 @@ class read_ibtracs_v4(object):
 		#ncFileName = '/data2/clee/bttracks/IBTrACS.ALL.v04r00.nc'
 		nc = Dataset(ncFileName,'r', format='NETCDF3_CLASSIC')
 		sourceN = []
+
 		if 'atl' in basins:
 			sourceN.extend(['NA'])
+
 		if 'wnp' in basins:
 			sourceN.extend(['WP'])
+
 		if 'sh' in basins:
 			sourceN.extend(['SA','SP','SI'])
+
+		if 'sa' in basins:
+			sourceN.extend(['SA'])
+
+		if 'sp' in basins:
+			sourceN.extend(['SP'])
+
+		if 'si' in basins:
+			sourceN.extend(['SI'])
+
 		if 'ni' in basins:
 			sourceN.extend(['NI'])
+
 		if 'enp' in basins:
 			sourceN.extend(['EP'])
+
 		if 'global' in basins:
 			sourceN = ['NA','WP','SA','SP','SI','NI','EP']
+
 		sourceN = np.array(sourceN)
 		arg=[]
 		for i in range(sourceN.shape[0]):
-			arg.extend(np.argwhere((nc.variables['basin'][:,0,0]==sourceN[i][0])&
-				(nc.variables['basin'][:,0,1]==sourceN[i][1])).ravel().tolist()) 
+			arg.extend(np.argwhere((nc.variables['basin'][:,0,0]==sourceN[i][0].encode("utf-8"))&
+			(nc.variables['basin'][:,0,1]==sourceN[i][1].encode("utf-8"))).ravel().tolist())
 		arg = np.array(arg)
-		print(sourceN,basins)
 		#print(arg)
 		lon = nc.variables['usa_lon'][:][arg,::gap].T
 		lat = nc.variables['usa_lat'][:][arg,::gap].T
 		wspd = nc.variables['usa_wind'][:][arg,::gap].T
 		days = nc.variables['time'][:][arg,::gap].T
-		names = nc.variables['name'][:][arg,:].T
-		stormID = nc.variables['number'][:][arg]
+		names = nc.variables['name'][:][arg,:].T 
+		stormID = nc.variables['number'][:][arg] 
 		dist2land = nc.variables['dist2land'][:][arg,::gap].T
 		trspeed = nc.variables['storm_speed'][:][arg,::gap].T
 		trdir = nc.variables['storm_dir'][:][arg,::gap].T
@@ -237,12 +456,12 @@ class read_ibtracs_v4(object):
 		lon = np.array(lon[:,arg])
 		lat = np.array(lat[:,arg])
 		year = year[arg]
-		wspd = np.float_(np.array(wspd[:,arg]))
+		wspd = np.float64(np.array(wspd[:,arg]))
 		days = np.array(days[:,arg])
 		dist2land = np.array(dist2land[:,arg])
-		wspd[wspd==-9999.] = np.float('nan')
-		lon[lon==-9999.] = np.float('nan')
-		lat[lat==-9999.] = np.float('nan')
+		wspd[wspd==-9999.] = np.float64('nan')
+		lon[lon==-9999.] = np.float64('nan')
+		lat[lat==-9999.] = np.float64('nan')
 		stormID = np.array(stormID[arg])
 		names = np.array(names[:,arg])
 		trspeed = np.array(trspeed[:,arg])
@@ -262,3 +481,78 @@ class read_ibtracs_v4(object):
 		self.trspeed = trspeed
 		self.trdir = trdir
 		self.times = times
+
+class read_ibtracs_v4_xr(object):
+        """
+        a function read /data2/clee/bttracks/IBTrACS.ALL.v04r00.nc
+        use xarray
+        we use all USA agency - usa_lat, usa_lon, etc 
+        atl - NHC ATL
+        enp - NHC ENP
+        wnp,sh,ni - JTWC for the rest: SH, IO, and WPC
+        'global', it is reading all data
+        No longer need 'gap', but only keep data at 00,06,12,18z...
+        """
+        def __init__(self,ncFileName,basins):
+                ds = xr.open_dataset(ncFileName)
+                sourceN = []
+                if 'atl' in basins:
+                    sourceN.extend(['NA'])
+                if 'wnp' in basins:
+                    sourceN.extend(['WP'])
+                if 'sh' in basins:
+                    sourceN.extend(['SA','SP','SI'])
+                if 'ni' in basins:
+                    sourceN.extend(['NI'])
+                if 'enp' in basins:
+                    sourceN.extend(['EP'])
+                if 'global' in basins:
+                    sourceN = ['NA','WP','SA','SP','SI','NI','EP']
+                sourceN = np.array(sourceN)
+                basins = ds.basin[:,0].values
+                arg = []
+                for i in range(sourceN.shape[0]):
+                    arg.extend(np.argwhere(basins==sourceN[i].encode('UTF-8')).ravel().tolist())
+                arg = np.array(arg)
+                #print(arg)
+                lon = ds.usa_lon.values[arg]
+                lon[lon<0] = lon[lon<0]+360
+                nNaN = np.argwhere(np.nanmax(np.array(lon),axis=1)!=-9999.).ravel()
+                ds1 = ds.sel(storm=arg[nNaN])
+                hours = ds1.time.dt.hour.values
+                arg_a,arg_b = np.where((hours==0)|(hours==6)|(hours==12)|(hours==18))
+                lon = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                lat = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                wspd = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                dist2land = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                trspeed = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                trdir = np.zeros([np.unique(arg_a).shape[0],np.int64(hours.shape[1]/2)])
+                for i,iarg in enumerate(np.unique(arg_a)):
+                        iarg_b = np.sort(arg_b[arg_a==iarg])
+                        lon[i,:iarg_b.shape[0]] = ds1.usa_lon[iarg,iarg_b].values
+                        lat[i,:iarg_b.shape[0]] = ds1.usa_lat[iarg,iarg_b].values
+                        wspd[i,:iarg_b.shape[0]] = ds1.usa_wind[iarg,iarg_b].values
+                        dist2land[i,:iarg_b.shape[0]] = ds1.dist2land[iarg,iarg_b].values
+                        trspeed[i,:iarg_b.shape[0]] = ds1.storm_speed[iarg,iarg_b].values
+                        trdir[i,:iarg_b.shape[0]] = ds1.storm_dir[iarg,iarg_b].values
+                        sdate_dummy = np.hstack([ds1.time[iarg,iarg_b].values, pd.to_datetime(np.repeat(pd.NaT,np.int64(hours.shape[1]/2)-iarg_b.shape[0]).tolist())])
+                        status_dummy = np.hstack([ds1.usa_status[iarg,iarg_b].values, np.repeat(b'  ',np.int64(hours.shape[1]/2)-iarg_b.shape[0])])
+                        if i == 0:
+                                sdate = sdate_dummy
+                                status = status_dummy
+                        else:
+                                sdate = np.vstack([sdate,sdate_dummy])
+                                status = np.vstack([status,status_dummy])
+                self.lon = lon
+                self.lat = lat
+                self.wspd = wspd
+                self.dates = sdate
+                self.names = ds1.name[np.unique(arg_a)]
+                self.stormID = ds1.number[np.unique(arg_a)]
+                self.distland = dist2land
+                self.trspeed = trspeed
+                self.trdir = trdir
+                self.season = ds1.season[np.unique(arg_a)]
+                self.basin = ds1.basin[np.unique(arg_a)]
+                self.status = status
+

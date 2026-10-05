@@ -50,8 +50,8 @@ def fix_coords(ds):
 		)	
 	return ds
 
-#for iy in range(1979,2015):
-for iy in range(2000, 2010):
+for iy in range(1979,2015):
+#for iy in range(2000, 2010):
 	for im in range(1,13):
 		## TODO: adjust so it does both u and v components? was with only u when i opened
 		filename = 'u_component_of_wind_'+int2str(iy,4)+int2str(im,2)+'_6hly.nc'
