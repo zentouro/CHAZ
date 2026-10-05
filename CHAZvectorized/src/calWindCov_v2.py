@@ -1,5 +1,6 @@
+
 import numpy as np
-from datetime import datetime as real_datetime
+from datetime import datetime #as real_datetime
 import sys
 import subprocess
 from tools.util import int2str, fix_coords
@@ -10,13 +11,18 @@ import gc
 import Namelist as gv
 import pandas as pd
 import xarray as xr
-import time
+
+import os 
+#import time
 
 ### ORIGINAL
 def createNetCDF(covMatrix,iy,xlong,xlat):
 	var = ['u200p2D','v200p2D','u850p2D','v850p2D']
 	#nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
-	nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w',format='NETCDF4')
+	#nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w', format='NETCDF4')
+	cov_fname = get_cov_fname(iy)
+	nc = Dataset(cov_fname, 'w', format = 'NETCDF4')
+	
 	nc.createDimension('latitude',xlat.shape[0])
 	nc.createDimension('longitude',xlong.shape[0])
 	nc.createDimension('month',covMatrix.shape[1])
@@ -52,7 +58,7 @@ def fillinNaN(var,neighbors):
 
 		##TODO: how is count being used here? 
 		## I think it can be removed
-		count = 0
+		#count = 0
 		while np.any(a.mask):
 			a_copy = a.copy()
 			for hor_shift,vert_shift in neighbors:
@@ -62,7 +68,7 @@ def fillinNaN(var,neighbors):
 				idx=~a_shifted.mask*a.mask
 				#print count, idx[idx==True].shape 
 				a[idx]=a_shifted[idx]
-			count+=1
+			#count+=1
 		var[ii,:,:] = a
 	return var
 
@@ -89,12 +95,19 @@ def preprocess(ds):
     
 	return ds
 
+def get_cov_fname(iy):
+	'''
+	Simple function to keep covariance matrix naming the same 
+	across two other functions
+	'''
+	return gv.pre_path + 'Cov_' + int2str(iy, 4) + '.nc'
+
 
 def run_windCov():
 	##### reading monthly data through a list
 	##### daily_csv should be in the namelist.py
-	y1 = gv.Year1
-	y2 = gv.Year2
+	# y1 = gv.Year1
+	# y2 = gv.Year2
 	monthly_csv = gv.monthlycsv
 	with open(monthly_csv,'r') as f:
 		df_mary = f.readlines()
@@ -134,17 +147,30 @@ def run_windCov():
 
 	arg_y1 = -1
 	neighbors=((0,1),(0,-1),(1,0),(-1,0),(1,1),(-1,1),(1,-1),(-1,-1),(0,2),(0,-2),(2,0),(-2,0))
-	for iy in range(gv.Year1,gv.Year2+1):
+	
+	for iy in range(gv.Year1, gv.Year2+1):
+		## ovewrite protection:
+		## if Covariance Matrix export for a given year already exists
+		## and ovewrite = False in Namelist.py, then skip to the next year 
+		cov_fname = get_cov_fname(iy)
+		if os.path.exists(cov_fname) and not gv.overwrite:
+			print(f'{cov_fname} exists, skipping {iy}')
+			## then continue on to next year in the for loop
+			continue
+
+		## If the file doesn't exist or 
+        ## overwrite is set to True
+
 		arg_yd = np.argwhere((modely1d<=iy)&(modely2d>=iy)).ravel()
 		arg_ym = np.argwhere((modely1m<=iy)&(modely2m>=iy)).ravel()[0]  
-		
-		#arg_ym0 = np.argwhere((modely1m<=iy)&(modely2m>=iy)).ravel().tolist()
-		#arg_ym1 = np.argwhere((modely1m<=iy+1)&(modely2m>=iy+1)).ravel().tolist()
-		#arg_ym2 = np.argwhere((modely1m<=iy-1)&(modely2m>=iy-1)).ravel().tolist()
-		#arg_ym0.extend(arg_ym1)
-		#arg_ym0.extend(arg_ym2)
-		#arg_ym = np.unique(np.array(arg_ym0))
-		
+
+		# arg_ym0 = np.argwhere((modely1m<=iy)&(modely2m>=iy)).ravel().tolist()
+		# arg_ym1 = np.argwhere((modely1m<=iy+1)&(modely2m>=iy+1)).ravel().tolist()
+		# arg_ym2 = np.argwhere((modely1m<=iy-1)&(modely2m>=iy-1)).ravel().tolist()
+		# arg_ym0.extend(arg_ym1)
+		# arg_ym0.extend(arg_ym2)
+		# arg_ym = np.unique(np.array(arg_ym0))
+
 		if arg_yd[0] != arg_y1:
 			## added fix_coords (to handle ERA5 data with new coordinate names)
 			ds_uam = fix_coords(xr.open_dataset(df_sub_uam[arg_ym]))
@@ -165,7 +191,7 @@ def run_windCov():
 			arg_p850d = np.argwhere(ds_vad.level.values==850.).ravel()[0]
 			xlong = ds_vam.longitude.values
 			xlat = ds_vam.latitude.values
-			dsvadtime = pd.to_datetime(np.arange(ds_vad.day.shape[0]),unit='D',origin=pd.Timestamp(str(iy)+'-01-01'))
+			dsvadtime = pd.to_datetime(np.arange(ds_vad.day.shape[0]),unit='D',origin=pd.Timestamp(str(iy)+'-01-01'))  
 
 		###### This is a better way but xr.interP does not support chunk in the interpolation axis
 		#arg_tm = np.argwhere((ds_uam.time.dt.year.values==iy)|(ds_uam.time.dt.year.values==iy-1)|(ds_uam.time.dt.year.values==iy+1)).ravel()
@@ -207,6 +233,7 @@ def run_windCov():
 		ua850md = f(d)
 		f = interp1d(m,va850m,bounds_error=False,fill_value="extrapolate",axis=0)
 		va850md = f(d)
+		
 		##### now we are going to do the monthly cov.
 		covMatrix = np.zeros([10,12,va250md.shape[1],va250md.shape[2]])
 		for im in range(1,13):
@@ -258,6 +285,9 @@ def run_windCov():
 		del covMatrix,u250p, u250p2D, u850p, u850p2D, v250p, v250p2D, v850p, v850p2D  
 		gc.collect()
 
+
+
+### TODO: REMOVE COMMENTED COPIES IF UNECESSARY 
 ### UPDATE
 # def createNetCDF(covMatrix, iy, xlong, xlat):
 #     """Write covariance matrix. Uses a single nc.variables dict write per var."""

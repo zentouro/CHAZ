@@ -14,12 +14,25 @@ from tools.util import int2str, date_interpolation
 from netCDF4 import Dataset,date2num
 import Namelist as gv
 
+import os
+
+def get_A_fname(iy, im):
+	'''
+	Simple function to keep A file naming the same 
+	across two other functions
+	'''
+	return gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc'
+
+
 def createNetCDF(A1,iy,im,xllon,xllat):
 	"""
-	crerate NetCDF file for the syn wind, it will be 124MB each
+	create NetCDF file for the syn wind, it will be 124MB each
 	"""
-	nc = Dataset(gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc','w',format='NETCDF4')
+	A_fname = get_A_fname(iy, im)
+	nc = Dataset(A_fname, 'w',format='NETCDF4')
+	#nc = Dataset(gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc','w',format='NETCDF4')
 	#nc = Dataset(gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc','w',format='NETCDF3_CLASSIC')
+
 	nc.createDimension('latitude',xllat.shape[0])
 	nc.createDimension('longitude',xllon.shape[0])
 	nc.createDimension('days',A1.shape[3])
@@ -44,6 +57,7 @@ def createNetCDF(A1,iy,im,xllon,xllat):
 
 def run_calA():
 	for iy in range(gv.Year1, gv.Year2+1):
+
 		filename = gv.pre_path+ 'Cov1_'+int2str(iy,4)+'.nc'
 	
 		nc = Dataset(filename,'r',format='NETCDF4')
@@ -74,6 +88,12 @@ def run_calA():
 		# ########## CYL
 
 		for im in range(1,13,1):
+			A_fname = get_A_fname(iy, im)
+			if os.path.exists(A_fname) and not gv.overwrite:
+				print(f'{A_fname} exists, skipping [{iy}, {im}]')
+				## then continue onto next year/month in the for loop
+				continue
+
 			#time1 = time.time()
 			## number of days in the month (im)
 			nday = monthrange(iy,im)[1]

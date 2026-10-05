@@ -52,7 +52,6 @@ def createNetCDF(covMatrix,iy,xlong,xlat):
 	## from GitHub
 	#months[:] = range(1,covMatrix.shape[1]+1,1)
 
-
 	### start to create variables
 	count = 0
 	for iv in range(len(var)):
@@ -65,10 +64,22 @@ def createNetCDF(covMatrix,iy,xlong,xlat):
 	nc.close()
 	return()
 
+def get_preprocess_fname(iy):
+	return gv.pre_path + int2str(iy,4) + '_' + gv.ENS + '.nc'
+
+def _run_check(iy):
+	fname = get_preprocess_fname(iy)
+	return gv.overwrite or not os.path.exists(fname)
 
 def run_preProcesses():
 	y1 = gv.Year1
 	y2 = gv.Year2
+
+	## check if preprocessing is needed
+	years_todo = [iy for iy in range(y1, y2+1) if _run_check(iy)]
+	if not years_todo:
+		return
+
 	monthly_csv = gv.monthlycsv
 	with open(monthly_csv,'r') as f:
 		df_mary = f.readlines()
@@ -161,8 +172,9 @@ def run_preProcesses():
 
 	#### for covMatrix 
 	if True:
-		for iy in range(y1, y2+1):
-			time1 = time.time()
+		#for iy in range(y1, y2+1):
+		for iy in years_todo:
+			#time1 = time.time()
 			filename = gv.pre_path+'Cov_'+int2str(iy,4)+'.nc'
 			#nc = Dataset(filename,'r',format='NETCDF3_CLASSIC')
 			nc = Dataset(filename,'r',format='NETCDF4')
@@ -195,7 +207,8 @@ def run_preProcesses():
 	### could maybe do it in a lazy way and improve timings
 	### Now we are going to iterates it through years.	
 	arg_y1 = -1
-	for iy in range(y1, y2+1):
+	#for iy in range(y1, y2+1):
+	for iy in years_todo:
 		t0 = time.time()
 		arg_ym = np.argwhere((modely1m<=iy)&(modely2m>=iy)).ravel()[0]
 		if arg_ym != arg_y1:
@@ -223,7 +236,7 @@ def run_preProcesses():
 		hur700 = ds_hurm.r[arg_tm,arg_p700m].values
 		hur850 = ds_hurm.r[arg_tm,arg_p850m].values
 		
-		t2 = time.time()
+		#t2 = time.time()
 		hur = (hur500+hur700+hur850)/3.
 
 		
@@ -297,7 +310,7 @@ def run_preProcesses():
 			_vars[iv+'2'] = var2
 			del var, var2
 
-		t3 = time.time()
+		#t3 = time.time()
 
 		NewFile = gv.pre_path+int2str(iy,4)+'_'+gv.ENS+'.nc'
 		#nc = Dataset(NewFile,'w',format='NETCDF3_CLASSIC')  
@@ -330,14 +343,12 @@ def run_preProcesses():
 			gc.collect()
 			#print('year'+int2str(iy,4),time.time()-time1)
 
-		t4 = time.time()
+		#t4 = time.time()
 		##TODO: go back and remove extraneous time stuff
 		#print(f'{iy}: argwhere={t1-t0:.2f}  reads={t2-t1:.2f}  interp={t3-t2:.2f}  write={t4-t3:.2f}')
 
 
 	return
-
-
 
 
 # --------
