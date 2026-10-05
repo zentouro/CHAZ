@@ -6,5 +6,9 @@
 /CHAZvectorized/PI/*.mat
 /CHAZvectorized/era5data/*.nc
 /CHAZvectorized/input/*.nc
+/CHAZvectorized/input/original
+/CHAZvectorized/input/updating
+
+### exclude testing and scratch files
 /CHAZvectorized/scratch.ipynb
 /CHAZvectorized/scratch*.ipynb
