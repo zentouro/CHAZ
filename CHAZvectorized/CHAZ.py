@@ -18,6 +18,9 @@ import src.calA as calA
 import src.calWindCov_v2 as calWindCov_v2
 import src.preprocess_v2 as preprocess_v2
 
+import src.bt_gen as bt_gen
+import src.calCoefficients as calCoefficients
+
 from tools.util import int2str
 
 import pickle
@@ -32,6 +35,20 @@ start = time.time()
 
 global fpath
 fpath = gv.pre_path
+
+
+#######################
+### Training      #####
+#######################
+if gv.runTraining:
+   if gv.btgen:
+      ## creates bt_*.nc in input/
+      bt_gen.run_btgen()
+   if gv.calCoefficient:
+      ## creates coefficient_meanstd.nc
+      ## and bt_global_predictors.nc in /input
+      calCoefficients.run_calCoefficients()
+
 
 #######################
 ### Pre-Processes #####
@@ -58,7 +75,7 @@ if gv.runPreprocess:
 
    if gv.vectorize: 
       t0 = time.time()
-      if not gv.quiet: print('***PREPROCESSING using Beta Update ***')
+      if not gv.quiet: print('***PREPROCESSING using CHAZ v2 ***')
       if gv.calWind:
          if not gv.quiet: print('calWind')
          #calWindCov.run_windCov()
@@ -144,7 +161,7 @@ if gv.runCHAZ:
                os.remove(os.path.join(dir_name, item))              
 
    if gv.vectorize:
-      print('*** Running CHAZ using vectorized code in Beta ***')
+      print('*** Running CHAZ v2 ***')
       ### get seeding ratio in this experiment
       if gv.TCGIinput != 'random':
          if not gv.quiet: print ('get Seeding ratio for', gv.Model, gv.ENS)

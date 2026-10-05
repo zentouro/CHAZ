@@ -95,7 +95,7 @@ log_path = '/logs/'
 # debugging/verbose
 debugging = False     ## select True to include debug print statements and file saves     --  # partially implemented
 quiet = False         ## select True to suppress print statements while running           --  # partially implemented
-overwrite = True      ## select True to overwrite existing output                         -- # partially implemented (for CHAZ)
+overwrite = False      ## select True to overwrite existing output                         -- # partially implemented (for CHAZ)
                       ## TODO: add overwrite functionality to preprocessing
 
 
@@ -104,15 +104,15 @@ overwrite = True      ## select True to overwrite existing output               
 ## ignore variables when runTraining = False      ###
 ## not yet implemented                            ###
 #####################################################
-#runTraining = True
-#
+runTraining = True
+
 
 
 #####################################################
 ## Preprocesses                                   ###
 ## ignore variables when runPreprocess = False    ###
 #####################################################
-runPreprocess = True 
+runPreprocess = False 
 calWind = True 
 calpreProcess = True 
 calA = True
@@ -121,7 +121,7 @@ calA = True
 ## CHAZ                                           ###
 ## ignore variables when runCHAZ = False          ###
 #####################################################
-runCHAZ = True
+runCHAZ = False
 ### genesis 
 calGen = True   
 ### track
