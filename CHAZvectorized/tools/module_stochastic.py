@@ -61,6 +61,7 @@ def get_E1(bt):
         if v0E[v0E<iC].shape[0] > 50: c1 = iC; break
     for iC in np.arange(v0E.max(),v0E.min(),-10):
         if v0E[v0E>iC].shape[0] > 50: c2 = iC; break
+    ## binned (not really cat1)
     cat1 = np.arange(c1,c2+10,10) # range for Vinit
 
     return E0,v0E,cat1

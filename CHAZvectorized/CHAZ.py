@@ -47,8 +47,8 @@ if gv.runTraining:
    if gv.calCoefficient:
       ## creates coefficient_meanstd.nc
       ## and bt_global_predictors.nc in /input
+      ## TODO: implement overwrite protection
       calCoefficients.run_calCoefficients()
-
 
 #######################
 ### Pre-Processes #####

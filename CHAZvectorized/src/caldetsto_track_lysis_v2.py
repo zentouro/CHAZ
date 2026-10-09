@@ -12,7 +12,7 @@ import sys
 import gc
 import copy
 import tools.regression4 as reg4
-import tools.module_stochastic_vectorized as module_sto
+import tools.module_stochastic_v2 as module_sto
 import time
 import random
 from datetime import datetime
