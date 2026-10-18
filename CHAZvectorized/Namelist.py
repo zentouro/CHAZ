@@ -33,7 +33,7 @@ Model = 'ERA5'
 ENS = 'r1i1p1f1'
 TCGIinput = 'TCGI_CRH_PI'          # or "TCGI_SD_RI" or 'TCGI_CRH'
 CHAZ_ENS_0 = 0           
-CHAZ_ENS = 3                      # Number of ensemble realizations.  
+CHAZ_ENS = 2                      # Number of ensemble realizations.  
 CHAZ_Int_ENS = 40                  # Number of intensity realizations
 
 ### CHAZ parameters
@@ -46,9 +46,11 @@ vBeta = 2.0
 survivalrate = 0.78
 #seedN = 1                              # annual seeding rate for random seeding, not yet ready to use
 seedN = 1000                                 
-landmaskfile = 'input/landmask.nc'      
-ipath = 'input/updating/1981-2012/'                        ## ipath contains input data from observations (best tracks for all the basins from IBTrACS)
-opath = 'input/updating/1981-2012/bt_global_predictors.nc' ## and a global best track with intial predictors 
+landmaskfile = 'input/landmask.nc'  
+ipath = 'input/original/'    
+#ipath = 'input/updating/updated-error/'                        ## ipath contains input data from observations (best tracks for all the basins from IBTrACS)
+opath = 'input/original/bt_global_predictors.nc'
+#opath = 'input/updating/updated-error/bt_global_predictors.nc' ## and a global best track with intial predictors 
 
 ## Preprocessing output path AND
 ## CHAZ import path
@@ -57,16 +59,18 @@ pre_path = '/data0/miriamn/CHAZvectorized/pre/'
 #pre_path = '/xpt/taroko.local/data0/clee/ERA5/wdir-Landmask075_20250514/'  
 
 ## CHAZ output path
-output_path = '/data0/miriamn/CHAZvectorized/output/100526-training-test/'
+#output_path = '/data0/miriamn/CHAZvectorized/output/101126-original-error/'
+#output_path = '/data0/miriamn/CHAZvectorized/output/101226-original-bt-global/'
+output_path = '/data0/miriamn/CHAZvectorized/output/101826-timing-test/'
 
 ### local diretory preprocessing limited to year 2000-2009
 ### can expand when using known preprocessing 
 ### TODO: update list/preprocessing pointers to run on full timeseries 
-Year1 = 1950
-Year2 = 2025
+Year1 = 1970
+Year2 = 1975
 
 ### Defining landmask
-llon, llat,lldmask = get_landmask(landmaskfile)
+llon, llat, lldmask = get_landmask(landmaskfile)
 ldmask = lldmask[::-24,  ::24]          ## 2º
 ldldmask = lldmask[::-9, ::9]           ## .75º [used in module_GenBamPred.bam and .get_predictors]
 ldlon = llon[::9]
@@ -81,34 +85,24 @@ lldmask = lldmask[::-1,:]               ## flips latitudes so they are in the ri
 ####                                            ####
 #####################################################
 #[use the updated vectorized version of CHAZ, rather than the original]
-vectorize = True    ## applied to both preprocess AND CHAZ 
+vectorize = False       ## applied to both preprocess AND CHAZ 
 
 ## for CHAZ
 random_seed = 42
-local_random = False 
+local_random = False     ## for debugging, prescribes identical randomness to both CHAZ v1 and v2 
 
 
-## UPDATE TO LOGGING
+## TODO UPDATE TO LOGGING
 ## output progress and timing logs 
-log_path = '/logs/'
+# log_path = '/logs/'
 ## log_level = TK 
 
-# debugging/verbose
+## debugging/verbose
 ## these only work for v2 implementation
-debugging = False     ## select True to include debug print statements and file saves     --  # partially implemented
-quiet = False         ## select True to suppress print statements while running           --  # partially implemented
-overwrite = True     ## select True to overwrite existing output                         
-                      ## should work on all files
+debugging = True     ## select True to include debug print statements and file saves    
+quiet = False        ## select True to suppress print statements while running           
 
-
-#####################################################
-## Training                                       ###
-## ignore variables when runTraining = False      ###
-## not yet implemented                            ###
-#####################################################
-runTraining = False
-btgen = True
-calCoefficient = True
+overwrite = True      ## select True to overwrite existing output                         
 
 #####################################################
 ## Preprocesses                                   ###
@@ -118,6 +112,19 @@ runPreprocess = False
 calWind = True 
 calpreProcess = True 
 calA = True
+
+#####################################################
+## Training                                       ###
+## ignore variables when runTraining = False      ###
+## not yet implemented                            ###
+#####################################################
+### NOTE: TRAINING REQUIRES PREPROCESSING         ###
+
+### STILL IN DEVELOPMENT
+runTraining = False
+btgen = True
+calCoefficient = True
+
 
 #####################################################
 ## CHAZ                                           ###
