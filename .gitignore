@@ -1,17 +1,9 @@
 ### exclude large data files 
 /CHAZvectorized/pre/*.nc
 /CHAZvectorized/pre/*.mat
-/CHAZvectorized/pre-example/
-/CHAZvectorized/output/*
 /CHAZvectorized/PI/*.mat
 /CHAZvectorized/era5data/*.nc
 /CHAZvectorized/input/*.nc
-/CHAZvectorized/input/original
-/CHAZvectorized/input/updating
 /CHAZvectorized/input/original/*.nc
 /CHAZvectorized/input/updating/*.nc
 
-
-### exclude testing and scratch files
-/CHAZvectorized/scratch.ipynb
-/CHAZvectorized/scratch*.ipynb
