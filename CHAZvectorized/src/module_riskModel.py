@@ -21,7 +21,9 @@ from tools.regression4 import calMultiRegression_coef_mean_water
 from tools.regression4 import calMultiRegression_coef_mean_land
 
 
-##updated np.float('nan') to float('nan')
+## updated np.float('nan') to float('nan')
+## updated NETCDF3 -> NETCDF4
+## otherwise unchanged
 
 def resize_basinData():
     """
@@ -245,8 +247,6 @@ def bam(iS,block_id=None):
             u850m2d = date_interpolation(fstDate,u850m)
             v850m2d = date_interpolation(fstDate,v850m)
 
-        ## not sure if this is supposed to be in the previous if statement
-        ## tutorial has a fstDate.month if statement
         FileAName =\
         gv.ipath+'A_'+str(fstDate.year)+int2str(fstDate.month,2)+'.nc'
         
@@ -286,9 +286,9 @@ def bam(iS,block_id=None):
         fstldmask[count,b] = np.rint(np.nanmean(ldmask[iy1:iy2+1,ix1:ix2+1])) 
         count += 1
 	    
-        # ## not sure if this else is for the preceding if? 
-        # ## not in the tutorial 
-        # ## commenting out for now
+        ## not sure if this else is for the preceding if? 
+        ## not in the tutorial 
+        ## commenting out for now
         # else:
         #     print('no'+fileName)
         #     break
