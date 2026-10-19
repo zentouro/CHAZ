@@ -2,6 +2,8 @@
 '''
 Define global variable for CHAZ.py
 '''
+
+## UNUSED
 basinName = ['atl','wnp','enp','ni','sh']
 labelstring=['ATL','WPC','E-CPC','IO','SH']
 colors = ['Red','blue','DarkTurquoise','purple','gold']

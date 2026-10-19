@@ -240,7 +240,7 @@ def run_preProcesses():
 		hur = (hur500+hur700+hur850)/3.
 
 		
-		### in some model the dynamic variable and thermodyanmic variable 
+		### in some models the dynamic variable and thermodyanmic variable 
 		### are output at grid center
 		### we need to map them on the same grid
 		if hur.shape != va250.shape:

@@ -6,5 +6,7 @@
 /CHAZvectorized/input/*.nc
 /CHAZvectorized/input/original/*.nc
 /CHAZvectorized/input/updating/*.nc
+/CHAZvectorized/input/original/*
+/CHAZvectorized/input/updating/*
 /CHAZvectorized/z_scratch-CHAZ/
 

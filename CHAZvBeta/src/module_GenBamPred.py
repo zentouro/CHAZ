@@ -263,6 +263,7 @@ def bam(iS,block_id=None):
         fstlon[count,b] = fstLon
         fstlat[count,b] = fstLat
 
+        ## TODO: using old ldmask
         fstldmask[count,b] = np.rint(np.nanmean(gv.ldmask[iy1:iy2+1,ix1:ix2+1])) 
         del u250,u850,v250,v850
         count += 1

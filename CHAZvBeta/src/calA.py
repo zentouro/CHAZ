@@ -97,7 +97,7 @@ def run_calA():
 				for ixx in range(xllon.shape[0]):
 					for iyy in range(xllat.shape[0]):
 						if np.isnan(covv[:,:,iyy,ixx,iday]).any():
-							print('break')
+							# print('break')
 							break
 						A[:,:,iyy,ixx,iday] = linalg.cholesky(covv[:,:,iyy,ixx,iday]).T
 
@@ -112,8 +112,8 @@ def run_calA():
 			A1[8,:,:,:] = A[3,2,:,:,:]
 			A1[9,:,:,:] = A[3,3,:,:,:]
 			#print 'finish cal A data', time.time()-time1
-			time1 = time.time()
+			#time1 = time.time()
 			createNetCDF(A1,iy,im,xllon,xllat)
-			#print 'finish saving A data', time.time()-time1
+			#print('finish saving A data'), time.time()-time1
 			gc.collect()
 	return()

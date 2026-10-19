@@ -13,6 +13,23 @@ import Namelist as gv
 import pandas as pd
 import xarray as xr
 
+
+# ## TEMPORARRY FOR TESTING
+# import time
+# from collections import defaultdict
+# from contextlib import contextmanager
+
+# T = defaultdict(float)
+
+# @contextmanager
+# def timer(label):
+#     t = time.perf_counter()
+#     try:
+#         yield
+#     finally:
+#         T[label] += time.perf_counter() - t
+
+
 def createNetCDF(covMatrix,iy,xlong,xlat):
 	var = ['u200p2D','v200p2D','u850p2D','v850p2D']
 	nc = Dataset(gv.pre_path+'Cov_'+int2str(iy,4)+'.nc','w',format='NETCDF3_CLASSIC')
@@ -122,18 +139,26 @@ def run_windCov():
 		#arg_ym0.extend(arg_ym1)
 		#arg_ym0.extend(arg_ym2)
 		#arg_ym = np.unique(np.array(arg_ym0))
+
+		#with timer('open+setup'):
 		if arg_yd[0] != arg_y1:
 			ds_uam = xr.open_dataset(df_sub_uam[arg_ym])
 			ds_vam = xr.open_dataset(df_sub_vam[arg_ym])
 			arg_p250m = np.argwhere(ds_uam.level.values==250.).ravel()[0]
 			arg_p850m = np.argwhere(ds_uam.level.values==850.).ravel()[0]
-			ds_uad = xr.open_mfdataset(df_sub_uad[arg_yd])
-			ds_vad = xr.open_mfdataset(df_sub_vad[arg_yd])
+
+			### update because xarray changed the defaults
+			ds_uad = xr.open_mfdataset(df_sub_uad[arg_yd], combine='nested', concat_dim='day')
+			ds_vad = xr.open_mfdataset(df_sub_vad[arg_yd], combine='nested', concat_dim='day')
+			### original
+			#ds_uad = xr.open_mfdataset(df_sub_uad[arg_yd])
+			#ds_vad = xr.open_mfdataset(df_sub_vad[arg_yd])
 			arg_p250d = np.argwhere(ds_vad.level.values==250.).ravel()[0]
 			arg_p850d = np.argwhere(ds_vad.level.values==850.).ravel()[0]
 			xlong = ds_vam.longitude.values
 			xlat = ds_vam.latitude.values
 			dsvadtime = pd.to_datetime(np.arange(ds_vad.day.shape[0]),unit='D',origin=pd.Timestamp(str(iy)+'-01-01'))
+
 		###### This is a better way but xr.interP does not support chunk in the interpolation axis
 		#arg_tm = np.argwhere((ds_uam.time.dt.year.values==iy)|(ds_uam.time.dt.year.values==iy-1)|(ds_uam.time.dt.year.values==iy+1)).ravel()
 		arg_tm = np.argwhere((ds_uam.time.dt.year.values==iy)).ravel()
@@ -154,6 +179,7 @@ def run_windCov():
 
 		### on github
 		#m = np.argwhere(date_daily.day==15).ravel() ## roughly middle of the month
+		#with timer('monthly read+fill+interp'):
 
 		ua250m = ds_uam.u[arg_tm,arg_p250m].values
 		ua850m = ds_uam.u[arg_tm,arg_p850m].values
@@ -174,14 +200,20 @@ def run_windCov():
 		ua850md = f(d)
 		f = interp1d(m,va850m,bounds_error=False,fill_value="extrapolate",axis=0)
 		va850md = f(d)
+
+
 		##### now we are going to do the monthly cov.
 		covMatrix = np.zeros([10,12,va250md.shape[1],va250md.shape[2]])
 		for im in range(1,13):
+
+			#with timer('daily read'):
 			arg_td = np.argwhere((dsvadtime.year==iy)&(dsvadtime.month==im)).ravel()
 			ua250d = ds_uad.u[arg_td,arg_p250d].values
 			ua850d = ds_uad.u[arg_td,arg_p850d].values
 			va250d = ds_vad.v[arg_td,arg_p250d].values
 			va850d = ds_vad.v[arg_td,arg_p850d].values
+
+			#with timer('daily fillinNaN'):
 			#missing_values = nc.variables['ua'].missing_value
 			missing_value = 1e+20
 			ua850d[ua850d!=ua850d] = 1e+20
@@ -190,7 +222,7 @@ def run_windCov():
 			ua850d = np.ma.masked_values(ua850d, missing_value)
 			ua850d = fillinNaN(ua850d,neighbors)
 			va850d = fillinNaN(va850d,neighbors)
-
+			#with timer('anomalies+reshape'):
 			arg_md = np.argwhere((dsvadtime[arg_td].year==iy)&(dsvadtime[arg_td].month==im)).ravel()
 			u250p = ua250d-ua250md[arg_md]
 			u250p2D = u250p.reshape([u250p.shape[0],u250p.shape[1]*u250p.shape[2]])
@@ -200,6 +232,8 @@ def run_windCov():
 			v250p2D = v250p.reshape([u250p.shape[0],u250p.shape[1]*u250p.shape[2]])
 			v850p = va850d-va850md[arg_md]
 			v850p2D = v850p.reshape([u250p.shape[0],u250p.shape[1]*u250p.shape[2]])
+
+			#with timer('my_cov'):
 			var = ['u250p2D','v250p2D','u850p2D','v850p2D']
 			count = 0
 			for iv in range(len(var)):
@@ -213,6 +247,15 @@ def run_windCov():
 					count += 1
 			print(iy, im, count, vname, vname1)
 
+		#with timer('createNetCDF'):
 		createNetCDF(covMatrix,iy,xlong,xlat)
+
 		del covMatrix,u250p, u250p2D, u850p, u850p2D, v250p, v250p2D, v850p, v850p2D  
 		gc.collect()
+
+	
+	# # after the year loop
+	# total = sum(T.values())
+	# for k, v in sorted(T.items(), key=lambda kv: -kv[1]):
+	# 	print(f'{k:28s} {v:8.1f}s  {100*v/total:5.1f}%')
+

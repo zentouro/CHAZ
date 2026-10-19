@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import numpy as np
-import pandas as pd
-import subprocess
-import dask.array as da
+
+#import subprocess
+#import pandas as pd
+#import dask.array as da
+#import src.module_riskModel as mrisk
+
 import os
-import src.module_riskModel as mrisk
+
 import src.module_GenBamPred as GBP
 import src.module_GenBamPred_v2 as GBP_vectorized
 import Namelist as gv
@@ -17,6 +20,7 @@ import src.calA as calA
 
 import src.calWindCov_v2 as calWindCov_v2
 import src.preprocess_v2 as preprocess_v2
+import src.calA_v2 as calA_v2
 
 import src.bt_gen as bt_gen
 import src.calCoefficients as calCoefficients
@@ -24,22 +28,22 @@ import src.calCoefficients as calCoefficients
 from tools.util import int2str
 
 import pickle
-
 import time
+
+## for exporting namelist variables
+import datetime, sys, xarray, types, yaml
 
 
 start = time.time()
 
-#py2 -> py3 print statement -> function
-#print (gv.Model, gv.ENS, gv.TCGIinput)
 
 global fpath
 fpath = gv.pre_path
 
-
 #######################
 ### Training      #####
 #######################
+### Still in dev  #####
 if gv.runTraining:
    if gv.btgen:
       ## creates bt_*.nc in input/
@@ -55,6 +59,7 @@ if gv.runTraining:
 #######################
 if gv.runPreprocess: 
 
+   ## ORIGINAL
    if not gv.vectorize: 
       t0 = time.time()
       if not gv.quiet: print('***STOCK PREPROCESSING***')
@@ -72,25 +77,23 @@ if gv.runPreprocess:
          calA.run_calA()
       t3 = time.time()
 
-
+   ## UPDATED
    if gv.vectorize: 
       t0 = time.time()
       if not gv.quiet: print('***PREPROCESSING using CHAZ v2 ***')
       if gv.calWind:
          if not gv.quiet: print('calWind')
-         #calWindCov.run_windCov()
          calWindCov_v2.run_windCov()
+
       t1 = time.time()
       if gv.calpreProcess:
          if not gv.quiet: print('calpreProcess')
-         ## highest priority
-         #preprocess.run_preProcesses()
          preprocess_v2.run_preProcesses()
+
       t2 = time.time()
       if gv.calA:
          if not gv.quiet: print('calA')
-         ## calA is already pretty speedy (lowest priority)
-         calA.run_calA()
+         calA_v2.run_calA()
       t3 = time.time()
 
    if not gv.quiet: print(f'Preprocess run times: calWind={t1-t0:.2f}  calpreProcess={t2-t1:.2f}  calA={t3-t2:.2f}')
@@ -100,23 +103,24 @@ if gv.runPreprocess:
 ### Run CHAZ       ####
 #######################
 if gv.runCHAZ:
+
+   ## ORIGINAL
    if not gv.vectorize:
       if not gv.quiet: print('*** Running stock CHAZ ***')
       ### get seeding ratio in this experiment
       if gv.TCGIinput != 'random':
          if not gv.quiet: print ('get Seeding ratio for', gv.Model, gv.ENS)
          ipath = gv.pre_path
-         #ratio = GBP.get_seeding_ratio(ipath,1981,2005,'HIST')
          ratio = GBP.get_seeding_ratio(ipath, 1981, 2005)
          if not gv.quiet: print ('The seeding ratio is',ratio)
 
       ### running genesis,track,predictors,& intensity
       ### output yearly 
       for ichaz in range(gv.CHAZ_ENS_0, gv.CHAZ_ENS):
-      #for ichaz in range(1, gv.CHAZ_ENS+1):              ### this matches the tutorial but idk if it'll break everything
          for iy in range(gv.Year1, gv.Year2+1):
 
             ### genesis 
+            t0 = time.time()
             if gv.calGen:
                if gv.TCGIinput == 'random':
                   print (iy,'random seeding has not yet tested')
@@ -124,7 +128,8 @@ if gv.runCHAZ:
                else:
                   print (iy, 'TCGI')
                   climInitDate, climInitLon, climInitLat = GBP.getSeeding(fpath, iy,ratio)
-            
+
+               
                if gv.debugging: 
                   print('saving ClimInit data')
                   np.save(f'{gv.output_path}climInitDate_{iy}', climInitDate)
@@ -132,10 +137,11 @@ if gv.runCHAZ:
                   np.save(f'{gv.output_path}climInitLat_{iy}', climInitLat)
                   print('saved')
 
+            t1 = time.time()
             if gv.calBam:
                if not gv.quiet: print (iy, 'Bam')
                fst = GBP.getBam(climInitDate, climInitLon, climInitLat, iy, ichaz)
-               
+
                try:
                   fst_file = open(f'{gv.output_path}fst_{iy}', 'wb')
                   pickle.dump(fst, fst_file)
@@ -149,9 +155,12 @@ if gv.runCHAZ:
                GBP.calPredictors(fst,iy,ichaz)
                del fst
             
+            t2 = time.time()
             if gv.calInt:
                if not gv.quiet: print (iy, 'calculate Intensities')
                CHAZ_detsto.calIntensity(iy, ichaz)
+
+            t3 = time.time()
 
       dir_name = gv.ipath
       t = os.listdir(dir_name)
@@ -160,6 +169,7 @@ if gv.runCHAZ:
          if item.endswith(".pik"):
                os.remove(os.path.join(dir_name, item))              
 
+   ## UPDATED
    if gv.vectorize:
       print('*** Running CHAZ v2 ***')
       ### get seeding ratio in this experiment
@@ -167,15 +177,14 @@ if gv.runCHAZ:
          if not gv.quiet: print ('get Seeding ratio for', gv.Model, gv.ENS)
          ipath = gv.pre_path
 
+         ## TODO: Add rational for year selection
          ratio = GBP_vectorized.get_seeding_ratio(ipath, 1981, 2005)
          if not gv.quiet: print ('The seeding ratio is',ratio)
 
       
-      ### running genesis,track,predictors,& intensity
+      ### running genesis,track,predictors, & intensity
       ### output yearly 
       for ichaz in range(gv.CHAZ_ENS_0, gv.CHAZ_ENS):
-         # print(ichaz)
-      #for ichaz in range(1, gv.CHAZ_ENS+1):              ### this matches the tutorial but idk if it'll break everything
          for iy in range(gv.Year1, gv.Year2+1):
 
             output_fname = f"{gv.output_path}{gv.Model}_{iy}_ens{int2str(ichaz,3)}.nc"
@@ -192,7 +201,9 @@ if gv.runCHAZ:
             else:
                try:
                   ### genesis 
+                  t0 = time.time()
                   if gv.calGen:
+                    
                      if gv.TCGIinput == 'random':
                         print (iy,'random seeding has not yet tested')
                         climInitDate, climInitLon, climInitLat = GBP_vectorized.randomSeeding(iy,gv.seedN)
@@ -207,7 +218,8 @@ if gv.runCHAZ:
                         np.save(f'{gv.output_path}climInitLon_{iy}', climInitLon)
                         np.save(f'{gv.output_path}climInitLat_{iy}', climInitLat)
                         print('saved')
-
+                  
+                  t1 = time.time()
                   if gv.calBam:
                      if not gv.quiet: print (iy, 'Bam')
                      fst = GBP_vectorized.getBam(climInitDate, climInitLon, climInitLat, iy, ichaz)
@@ -225,9 +237,13 @@ if gv.runCHAZ:
                      GBP_vectorized.calPredictors(fst,iy,ichaz)
                      del fst
                   
+                  t2 = time.time()
                   if gv.calInt:
+                     
                      if not gv.quiet: print (iy, 'calculate Intensities')
                      CHAZ_detsto_vectorized.calIntensity(iy, ichaz)
+
+                  t3 = time.time()
                except Exception as e:
                   print(f'Failed for {iy} and realization {ichaz}')
                   print(e)
@@ -239,7 +255,33 @@ if gv.runCHAZ:
          if item.endswith(".pik"):
                os.remove(os.path.join(dir_name, item))  
 
+   ## output timing for most recent year
+   if not gv.quiet: print(f'CHAZ run times (for {iy}): calGen={t1-t0:.2f}  calBam={t2-t1:.2f}  calInt={t3-t2:.2f}')
+
 
 end = time.time()
 
+## save out Namelist information
+print(f'Logging Namelist variables at {gv.output_path}/Namelist_config.yaml')
+cfg = {
+    k: v for k, v in vars(gv).items()
+    if not k.startswith("_")        ## don't need to save all the python files
+    and not k.startswith('ll')      ## don't need to save the generated landmask arrays
+    and not k.startswith('ld')      ## don't need to save the generated landmask arrays
+    and not isinstance(v, types.ModuleType)
+    and not callable(v)
+}
+
+meta = {
+    "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
+    "python": sys.version.split()[0],
+    "xarray": xarray.__version__,
+    "argv": sys.argv,
+}
+
+with open(gv.output_path+'Namelist_config.yaml', 'w') as f:
+    yaml.safe_dump({"_meta": meta, **cfg}, f, sort_keys = False)
+          
+
+## output total runtime
 print(f"Total runtime of CHAZ is {np.round(end - start,2)} seconds")

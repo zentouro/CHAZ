@@ -45,12 +45,13 @@ local_random_state = gv.local_random
 #     h = hashlib.md5(f"{base_seed}_{storm_id}_{phase}_{ensemble_id}".encode()).digest()
 #     return int.from_bytes(h[:4], 'little')
 
-jetcmap = plt.cm.get_cmap("jet",31)
-jet_vals = jetcmap(np.arange(31))
-cmap1 = mcolors.LinearSegmentedColormap.from_list('newjet', jet_vals)
-colors = jet_vals
-colorcat = np.arange(0,155,5) 
-xbin,ybin,basinMap = util.getbasinMap()
+
+# jetcmap = plt.cm.get_cmap("jet",31)
+# jet_vals = jetcmap(np.arange(31))
+# cmap1 = mcolors.LinearSegmentedColormap.from_list('newjet', jet_vals)
+# colors = jet_vals
+# colorcat = np.arange(0,155,5) 
+# xbin,ybin,basinMap = util.getbasinMap()
 
 def get_determin(iiS,block_id=None):
     iS = np.int_(iiS.mean(keepdims=True)[0])
@@ -346,15 +347,16 @@ def calIntensity(iy,ichaz):
     result_w = ma.getdata(result_wi['params'][:])
     result_li = nc.Dataset(gv.ipath + 'result_l.nc','r')
     result_l = ma.getdata(result_li['params'][:])
-    observed_data = nc.Dataset(gv.ipath + 'observed_data.nc', 'r')
-    meanX_w_obs = ma.getdata(observed_data['meanX_w_obs'][:])
-    stdX_w_obs = ma.getdata(observed_data['stdX_w_obs'][:])
-    meanY_w_obs = ma.getdata(observed_data['meanY_w_obs'][:])
-    stdY_w_obs = ma.getdata(observed_data['stdY_w_obs'][:])
-    meanX_l_obs = ma.getdata(observed_data['meanX_l_obs'][:])
-    stdX_l_obs = ma.getdata(observed_data['stdX_l_obs'][:])
-    meanY_l_obs = ma.getdata(observed_data['meanY_l_obs'][:])
-    stdY_l_obs = ma.getdata(observed_data['stdY_l_obs'][:])
+    ### unused
+    # observed_data = nc.Dataset(gv.ipath + 'observed_data.nc', 'r')
+    # meanX_w_obs = ma.getdata(observed_data['meanX_w_obs'][:])
+    # stdX_w_obs = ma.getdata(observed_data['stdX_w_obs'][:])
+    # meanY_w_obs = ma.getdata(observed_data['meanY_w_obs'][:])
+    # stdY_w_obs = ma.getdata(observed_data['stdY_w_obs'][:])
+    # meanX_l_obs = ma.getdata(observed_data['meanX_l_obs'][:])
+    # stdX_l_obs = ma.getdata(observed_data['stdX_l_obs'][:])
+    # meanY_l_obs = ma.getdata(observed_data['meanY_l_obs'][:])
+    # stdY_l_obs = ma.getdata(observed_data['stdY_l_obs'][:])
 
     NS = np.argwhere((bt2['StormYear'][:]>=1981)&(bt2['StormYear'][:]<=2012))[:,0]
     global E0, v0E, cat1, intV
@@ -382,7 +384,8 @@ def calIntensity(iy,ichaz):
     # meanY_l = pickle.load(f)
     # stdY_l = pickle.load(f)
     # f.close()
-    coeff_meanstd = nc.Dataset(gv.pre_path+'coefficient_meanstd.nc','r')
+    #coeff_meanstd = nc.Dataset(gv.pre_path+'coefficient_meanstd.nc','r')
+    coeff_meanstd = nc.Dataset(gv.ipath+'coefficient_meanstd.nc', 'r')
     meanX_w = ma.getdata(coeff_meanstd['meanX_w'][:])
     stdX_w = ma.getdata(coeff_meanstd['stdX_w'][:])
     meanY_w = ma.getdata(coeff_meanstd['meanY_w'][:])
