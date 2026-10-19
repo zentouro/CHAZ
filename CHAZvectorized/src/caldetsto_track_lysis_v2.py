@@ -38,13 +38,6 @@ local_random_state = gv.local_random
 seed = gv.random_seed
 rng = np.random.default_rng(seed=seed)
 
-jetcmap = plt.cm.get_cmap("jet",31)
-jet_vals = jetcmap(np.arange(31))
-cmap1 = mcolors.LinearSegmentedColormap.from_list('newjet', jet_vals)
-colors = jet_vals
-colorcat = np.arange(0,155,5) 
-xbin,ybin,basinMap = util.getbasinMap()
-
 
 def get_determin():
     '''
@@ -70,7 +63,6 @@ def get_determin():
     it2_array = np.zeros(nStorms, dtype=int)
     finished_storms = np.zeros(nStorms, dtype=bool)
     
-    ## idk if this speeds things up but it is easier for me to read
     StormLon_all = bt.StormLon
     StormLat_all = bt.StormLat
     landmaskMean_all = bt.landmaskMean
@@ -81,18 +73,20 @@ def get_determin():
     abs_lat_check = np.abs(StormLat_all[0, :]) >= 5.0   # (nStorms,)
     active_storms = has_data & abs_lat_check
 
-    # find last valid index for each storm
+    ## find last valid index for each storm
     last_valid_idx = np.full(nStorms, -1, dtype=int)
-    init_values = np.full(nStorms, np.nan)              # DIFFERENT FROM TUTORIAL
+    init_values = np.full(nStorms, np.nan)             
 
     for iS in range(nStorms):
         if active_storms[iS]:
+            ### Local random check, for debugging between v1 and v2
+            ### remove when v2 is fully vetted
             if local_random_state == True:
                 init_rng = np.random.default_rng(seed=seed + iS * 1000000 + 1)
-                init_values[iS] = init_rng.choice(intV[~np.isnan(intV)])    # DIFFERENT FROM TUTORIAL
+                init_values[iS] = init_rng.choice(intV[~np.isnan(intV)])    
             
             if local_random_state == False:
-                init_values[iS] = rng.choice(intV[~np.isnan(intV)])         # DIFFERENT FROM TUTORIAL
+                init_values[iS] = rng.choice(intV[~np.isnan(intV)])         
 
             valid_indices = np.where(dummy_mask[:, iS])[0]
             if len(valid_indices) > 0:
@@ -103,7 +97,7 @@ def get_determin():
 
     region_mask = (StormLat_all[0, :] >= 0) & (StormLon_all[0, :] >= 120) & (StormLon_all[0, :] <= 180)
 
-    ## DIFFERENT FROM TUTORIAL 
+
     bt.determin[0, active_storms & region_mask] = np.maximum(20, init_values[active_storms & region_mask])
     bt.determin[0, active_storms & ~region_mask] = np.maximum(25, init_values[active_storms & ~region_mask])
 
@@ -156,7 +150,8 @@ def get_determin():
             water_storms = np.array([])
             land_storms = np.array([])
         
-        ## TODO: this could probably be a seperate function (same in stochastic)
+        ## TODO: This could probably be a seperate 
+        ## function (same in stochastic)
         ## to avoid duplication
         ## water
         if len(water_storms) > 0:
@@ -421,8 +416,6 @@ def get_stochastic(iNN):
             too_weak = v1_land < 10
 
             finished_storms[land_storms[too_weak]] = True
-            ## ADDING TO DEBUG
-            ## COULD MOVE AFTER FINISHED STORMS TO MATCH GET_DETERMIN
             bt.stochastic[it + lT, land_storms[too_weak], iNN] = np.nan  # ADD
             
             ## update v0 and dvdt for continuing storms
@@ -483,8 +476,7 @@ def basic_checking_plot(ds):
     #plt.colorbar()
 
 
-## tidied this up so it isn't a giant list of basinMap[a==0000]
-## TODO double check that all the basinMap code works and matches original 
+
 def getbasinMap(ifplot=False):
     '''
     This function returns x bins, y bins, and a plot of the basin map.
@@ -512,7 +504,6 @@ def getbasinMap(ifplot=False):
         basinMap[mask] = basin_id
 
     # fix specific indices (flattened)
-    ## pretty sure i got all of them
     fix_indices = [
         1710, 1711, 1712, 1713, 1714, 1715, 1716, 1717, 1718, 1719,  
         1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1755, 
@@ -524,38 +515,34 @@ def getbasinMap(ifplot=False):
     
     return xbin, ybin, basinMap
 
-## TODO: Move to UTILS
-def defineBasin(lon0_obs,lat0_obs,basinlon,basinlat,basinMap):
-    '''
-    Defines basin based on observations and knowledge about the basin.
-    lon0_obs: initial longitude observed
-    lat0_obs: initial latitude observed
-    basinlon: basin longitude
-    basinlat: basin latitude 
-    basinMap: map of basin
-    '''
-    ### avoid NaN
-    basin = np.zeros(lon0_obs.shape)
-    ###
-    lat0_obs[lat0_obs>=90] = 89.9
-    lat0_obs[lat0_obs<=-90] = -89.9
-    notNaN_arg = np.where(~np.isnan(lon0_obs*lat0_obs))
-    x = np.floor(lon0_obs[notNaN_arg]/np.diff(basinlon)[0])
-    y = np.floor((lat0_obs[notNaN_arg]-basinlat[0])/np.diff(basinlat)[0])
-    x[x==basinMap.shape[0]] = basinMap.shape[0]-1
-    y[y==basinMap.shape[1]] = basinMap.shape[1]-1
-    basin[notNaN_arg] = basinMap[np.int_(x),np.int_(y)]
-    return(basin)
+## TODO: This has more masking than the version in util.py
+## not sure of the origination, leaving for future, if needed
+# def defineBasin(lon0_obs,lat0_obs,basinlon,basinlat,basinMap):
+#     '''
+#     Defines basin based on observations and knowledge about the basin.
+#     lon0_obs: initial longitude observed
+#     lat0_obs: initial latitude observed
+#     basinlon: basin longitude
+#     basinlat: basin latitude 
+#     basinMap: map of basin
+#     '''
+#     ### avoid NaN
+#     basin = np.zeros(lon0_obs.shape)
+#     ###
+#     lat0_obs[lat0_obs>=90] = 89.9
+#     lat0_obs[lat0_obs<=-90] = -89.9
+#     notNaN_arg = np.where(~np.isnan(lon0_obs*lat0_obs))
+#     x = np.floor(lon0_obs[notNaN_arg]/np.diff(basinlon)[0])
+#     y = np.floor((lat0_obs[notNaN_arg]-basinlat[0])/np.diff(basinlat)[0])
+#     x[x==basinMap.shape[0]] = basinMap.shape[0]-1
+#     y[y==basinMap.shape[1]] = basinMap.shape[1]-1
+#     basin[notNaN_arg] = basinMap[np.int_(x),np.int_(y)]
+#     return(basin)
 
 
 def clean_up_save(bt, iy, ichaz):
     if not gv.quiet: print('***CLEANING UP and SAVING .NC***')
 
-    ## DEBUGGING
-    # print("After determin computed:", np.sum(np.any(~np.isnan(bt.determin), axis=0)))
-    # print("After stochastic computed:", np.sum(np.any(~np.isnan(bt.stochastic), axis=(0,2))))
-
-    
     for iens in range(0,1):
         count1 = 0
         if count1 ==0:
@@ -585,6 +572,7 @@ def clean_up_save(bt, iy, ichaz):
         
         #### get basin-information
         lon0,lat0 = bt1.StormLon[0,:],bt1.StormLat[0,:]
+        xbin, ybin, basinMap = getbasinMap()
         basin = util.defineBasin(lon0,lat0,xbin,ybin,basinMap)
 
         #### nan-masking 
@@ -645,13 +633,11 @@ def clean_up_save(bt, iy, ichaz):
         bt1.StormLon[0,iS1] = np.float64('nan')
         #print("After lat<2 filter:", np.sum(np.any(~np.isnan(bt1.stochastic), axis=(0,2))))  # ADD
 
-        
         #### get rid of storms that are not from within the range
         iS1 = np.argwhere(basin==0)
         bt1.StormLon[0,iS1] = np.float64('nan')
         #print("After basin==0 filter:", np.sum(np.any(~np.isnan(bt1.stochastic), axis=(0,2))))  # ADD
 
-        
         #### get rid of storms that have no intensity record
         maxall = np.nanmax(bt1.stochastic,axis=0)
         #changed
@@ -660,7 +646,6 @@ def clean_up_save(bt, iy, ichaz):
         bt1.stochastic[:,iS1,iN1] = np.float64('nan')
         #bt1.stochastic[:,basin!=1,:] = np.float64('nan')
         #print("After maxall<=0 filter:", np.sum(np.any(~np.isnan(bt1.stochastic), axis=(0,2))))  # ADD
-
 
         arg = np.argwhere(bt1.StormLon[0,:] == bt1.StormLon[0,:])[:][:,0]
         if not gv.quiet: print("Final storms written to file:", arg.shape[0])  # ADD
@@ -735,11 +720,6 @@ def clean_up_save(bt, iy, ichaz):
 
     return()
 
-# def load_nc_via_pooch(filename):
-#     """Load NetCDF file via pooch and return xarray Dataset."""
-#     path = pooch.retrieve(url=f"{path_data}/{filename}", known_hash=None)
-#     return xr.open_dataset(path)
-
 
 def calIntensity(iy, ichaz):
     '''
@@ -751,12 +731,9 @@ def calIntensity(iy, ichaz):
     
     ## load datasets 
     bt2 = xr.open_dataset(gv.opath)
-    ## unused, commenting out 
-    #observed_data_ds = xr.open_dataset(gv.ipath + 'observed_data.nc')
     coefficient_meanstd_ds = xr.open_dataset(gv.ipath + 'coefficient_meanstd.nc')
     result_w_ds = xr.open_dataset(gv.ipath + 'result_w.nc')
     result_l_ds = xr.open_dataset(gv.ipath + 'result_l.nc')
-
 
     global result_w, result_l, meanX_w, meanY_w, stdX_w
     global stdY_w, meanX_l, meanY_l, stdX_l, stdY_l
