@@ -9,10 +9,10 @@ import numpy as np
 import os
 
 import src.module_GenBamPred as GBP
-import src.module_GenBamPred_v2 as GBP_vectorized
+import src.module_GenBamPred_v2 as GBP_v2
 import Namelist as gv
 import src.caldetsto_track_lysis as CHAZ_detsto
-import src.caldetsto_track_lysis_v2 as CHAZ_detsto_vectorized
+import src.caldetsto_track_lysis_v2 as CHAZ_detsto_v2
 
 import src.calWindCov as calWindCov
 import src.preprocess as preprocess
@@ -60,7 +60,7 @@ if gv.runTraining:
 if gv.runPreprocess: 
 
    ## ORIGINAL
-   if not gv.vectorize: 
+   if not gv.v2: 
       t0 = time.time()
       if not gv.quiet: print('***STOCK PREPROCESSING***')
       if gv.calWind:
@@ -78,7 +78,7 @@ if gv.runPreprocess:
       t3 = time.time()
 
    ## UPDATED
-   if gv.vectorize: 
+   if gv.v2: 
       t0 = time.time()
       if not gv.quiet: print('***PREPROCESSING using CHAZ v2 ***')
       if gv.calWind:
@@ -105,7 +105,7 @@ if gv.runPreprocess:
 if gv.runCHAZ:
 
    ## ORIGINAL
-   if not gv.vectorize:
+   if not gv.v2:
       if not gv.quiet: print('*** Running stock CHAZ ***')
       ### get seeding ratio in this experiment
       if gv.TCGIinput != 'random':
@@ -170,7 +170,7 @@ if gv.runCHAZ:
                os.remove(os.path.join(dir_name, item))              
 
    ## UPDATED
-   if gv.vectorize:
+   if gv.v2:
       print('*** Running CHAZ v2 ***')
       ### get seeding ratio in this experiment
       if gv.TCGIinput != 'random':
@@ -178,7 +178,7 @@ if gv.runCHAZ:
          ipath = gv.pre_path
 
          ## TODO: Add rational for year selection
-         ratio = GBP_vectorized.get_seeding_ratio(ipath, 1981, 2005)
+         ratio = GBP_v2.get_seeding_ratio(ipath, 1981, 2005)
          if not gv.quiet: print ('The seeding ratio is',ratio)
 
       
@@ -206,10 +206,10 @@ if gv.runCHAZ:
                     
                      if gv.TCGIinput == 'random':
                         print (iy,'random seeding has not yet tested')
-                        climInitDate, climInitLon, climInitLat = GBP_vectorized.randomSeeding(iy,gv.seedN)
+                        climInitDate, climInitLon, climInitLat = GBP_v2.randomSeeding(iy,gv.seedN)
                      else:
                         if not gv.quiet: print (iy, 'TCGI')
-                        climInitDate, climInitLon, climInitLat = GBP_vectorized.getSeeding(fpath, iy, ratio)
+                        climInitDate, climInitLon, climInitLat = GBP_v2.getSeeding(fpath, iy, ratio)
 
                      ## debugging
                      if gv.debugging: 
@@ -222,7 +222,7 @@ if gv.runCHAZ:
                   t1 = time.time()
                   if gv.calBam:
                      if not gv.quiet: print (iy, 'Bam')
-                     fst = GBP_vectorized.getBam(climInitDate, climInitLon, climInitLat, iy, ichaz)
+                     fst = GBP_v2.getBam(climInitDate, climInitLon, climInitLat, iy, ichaz)
                      
                      try:
                         fst_file = open(f'{gv.output_path}fst_{iy}', 'wb')
@@ -234,14 +234,14 @@ if gv.runCHAZ:
                         print('unable to save fst as dictionary')
                      
                      if not gv.quiet: print (iy, 'calculate predictors')
-                     GBP_vectorized.calPredictors(fst,iy,ichaz)
+                     GBP_v2.calPredictors(fst,iy,ichaz)
                      del fst
                   
                   t2 = time.time()
                   if gv.calInt:
                      
                      if not gv.quiet: print (iy, 'calculate Intensities')
-                     CHAZ_detsto_vectorized.calIntensity(iy, ichaz)
+                     CHAZ_detsto_v2.calIntensity(iy, ichaz)
 
                   t3 = time.time()
                except Exception as e:
