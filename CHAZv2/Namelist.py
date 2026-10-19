@@ -33,13 +33,13 @@ Model = 'ERA5'
 ENS = 'r1i1p1f1'
 TCGIinput = 'TCGI_CRH_PI'          # or "TCGI_SD_RI" or 'TCGI_CRH'
 CHAZ_ENS_0 = 0           
-CHAZ_ENS = 1                      # Number of ensemble realizations.  
+CHAZ_ENS = 2                       # Number of ensemble realizations.  
 CHAZ_Int_ENS = 40                  # Number of intensity realizations
 
 ### CHAZ parameters
 ### TODO: describe how to create these 
-monthlycsv = '/home/miriamn/CHAZ/CHAZvectorized/list.txt'
-dailycsv = '/home/miriamn/CHAZ/CHAZvectorized/list.txt'
+monthlycsv = '/home/miriamn/CHAZ/CHAZv2/list.txt'
+dailycsv = '/home/miriamn/CHAZ/CHAZv2/list.txt'
 
 uBeta = -1.5
 vBeta = 2.0
@@ -76,11 +76,10 @@ ldlat = llat[::9]
 #lldmask = ldldmask                      ## uses updated landmask throughotu                          
 
 ####################################################
-#### run CHAZ using v1 (beta)                   ####
+#### Run CHAZ using v1 (beta)                   ####
 #### or v2 (updated and vectorized)             ####
 ####                                            ####
 #####################################################
-#[use the updated v2 version of CHAZ, rather than the original]
 v2 = True       ## applied to both preprocess AND CHAZ 
 
 ## for CHAZ
@@ -90,14 +89,14 @@ random_seed = 42
 local_random = False     ## for debugging, prescribes identical randomness to both CHAZ v1 and v2 
 
 
-## TODO UPDATE TO LOGGING
+## TODO ADD LOGGING for proecessing and debug statements
 ## output progress and timing logs 
 # log_path = '/logs/'
 ## log_level = TK 
 
 ## debugging/verbose
 ## these only work for v2 implementation
-debugging = True     ## select True to include debug print statements and file saves    
+debugging = False     ## select True to include debug print statements and file saves    
 quiet = False        ## select True to suppress print statements while running           
 
 overwrite = True      ## select True to overwrite existing output                         
