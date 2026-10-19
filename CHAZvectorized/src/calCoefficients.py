@@ -6,7 +6,7 @@
 ## and ERA5 data             ##
 ###############################
 
-
+### STILL IN DEVELOPMENT ##
 
 ## necesarry imports and helper functions 
 
@@ -42,24 +42,10 @@ class Vregression1():
         self.y=np.empty([n1],dtype=float)*float('nan')
         self.x=np.empty([n1,n2],dtype=float)*float('nan')
 
-
-
-# no special Time branch
 class mybt:
     def __init__(self, bt_array):
         for iv in bt_array.keys():
             setattr(self, iv, bt_array[iv])      
-
-## original from readbst.py
-# class mybt:
-# 	def __init__(self,bt_array):
-# 		for iv in bt_array.keys():
-# 			if 'Time' not in iv:
-# 				setattr(self, iv, bt_array[iv])
-# 			else:
-# 				start = pd.Timestamp('1800-01-01').to_pydatetime()
-# 				setattr(self, iv, start+np.int_(bt_array[iv]*24)*timedelta(hours=1))
-
 
 def normalizeTransform(X,Y):
    """
@@ -98,9 +84,8 @@ def get_landmask(filename):
     return lon, lat, landmask
 
 def getSpeedDir(iiS,block_id=None):
-    ## iS was reporting as a single item array [TK]
+    
     iS = np.int_(iiS.mean(keepdims=True))[0]
-    #iS = np.int(iiS.mean(keepdims=True))
     if (bt['StormLat'][:,iS]==bt['StormLat'][:,iS]).any():
         it1 = np.argwhere(bt['StormLat'][:,iS]==bt['StormLat'][:,iS])[0,0]
         it2 = np.argwhere(bt['StormLat'][:,iS]==bt['StormLat'][:,iS])[-1,0]
@@ -129,18 +114,15 @@ def getStormTranslation(lon,lat,time):
     return sdir,speed
 
 
-## from getMeanStd.py - updated landmask
+## from original getMeanStd.py, but with updated landmask
 def get_predictors(iiS, ty1, ty2, block_id=None):
     ## iS was reporting as a single item array [TK]
     iS = np.int_(iiS.mean(keepdims=True))[0]
-    #iS = np.int(iiS.mean(keepdims=True))
-    #predictors=['StormMwspd','dVdt','trSpeed','dPIwspd','SHRD','rhMean','dPIwspd2','dPIwspd3','dVdt2','landmaskMean']
-    
-    ### for training, only want to use years 1980
+
+    ### for training, we only want to use years after 1980
     if ( (int(bt['StormYear'][iS]) >= ty1) & (int(bt['StormYear'][iS]) < ty2) ):
         if bt['StormYear'][iS]>1980:
             fileName = gv.pre_path+str(bt['StormYear'][iS])+'_'+gv.ENS+'.nc'
-            #nc = Dataset(fileName,'r',format='NETCDF3_CLASSIC')
             nc = Dataset(fileName, 'r', format = 'NETCDF4')
             xlong = nc.variables['Longitude'][:]
             xlat = nc.variables['Latitude'][:]
@@ -157,14 +139,12 @@ def get_predictors(iiS, ty1, ty2, block_id=None):
             del xlong, xlat
             nc.close()
 
-            ## TODO: use same landmask updates? 
-            ## updated - moved outside of for loop
-            ## 2º
+
             er = 6371.0 #km
             londis = 2*np.pi*er*np.cos(xxlat/180*np.pi)/360
             distance = np.empty(xxlong.shape,dtype=float)     
 
-            ### TODO: Double check this is what I want to be doing here still
+            ## Updated landmask
             ### using 0.75 ldmask ###
             ldxxlong,ldxxlat = np.meshgrid(gv.ldlon,gv.ldlat)
             ######
@@ -175,14 +155,13 @@ def get_predictors(iiS, ty1, ty2, block_id=None):
 
             for it in range(0,bt['StormLon'][:,iS].shape[0],1):	
                 if bt['Time'][it,iS] > 0:
-                    #distance = np.empty(xxlong.shape,dtype=float)
-                    #er = 6371.0 #km
-                    #londis = 2*np.pi*er*np.cos(xxlat/180*np.pi)/360
+
                     dx = londis*(xxlong - bt['StormLon'][it,iS])
                     dy = 110 * (xxlat - bt['StormLat'][it,iS])
                     distance = np.sqrt(dx*dx+dy*dy)
                     (j0,i0) = np.unravel_index(np.argmin(distance),distance.shape)
 
+                    ## using distance and radius from preprocessing
                     var,radius1,radius2 =  date_interpolation(datetime(1800,1,1)+timedelta(days = bt['Time'][it,iS]),PIVmax),0,500
                     #var,radius1,radius2 =  date_interpolation(datetime(1800,01,01)+timedelta(days = bt['Time'][it,iS]),PIVmax),0,500
                     bt['PIwspdMean'][it,iS] = np.mean(var[(distance<=radius2) & (distance>=radius1) & (var==var)])
@@ -203,19 +182,12 @@ def get_predictors(iiS, ty1, ty2, block_id=None):
                     bt['rhMean'][it,iS] = np.mean(var[(distance<=radius2) & (distance>=radius1) & (var==var)])
                     bt['rh'][it,iS] = var[j0,i0]
 
-                    # var,radius1,radius2 = copy.copy(ldmask),0,300
-                    # var[var==0] = -1.
-                    # var[var==3] = 0.0
-                    # bt['landmaskMean'][it,iS] = np.mean(var[(distance<=radius2) & (distance>=radius1) & (var==var)])
-                    # bt['landmask'][it,iS] = var[j0,i0] 
 
                     var,radius1,radius2 = copy.copy(gv.ldldmask),0,300
                     var[var==0] = -1.
                     var[var==3] = 0.0
         
                     ### recalculating the ix,iy landmask ####  
-                    # distance = np.empty(ldxxlong.shape,dtype=float)
-                    # londis = 2*np.pi*er*np.cos(ldxxlat/180*np.pi)/360
                     dx = londis75*(ldxxlong - bt['StormLon'][it,iS])
                     dy = 110 * (ldxxlat - bt['StormLat'][it,iS])  
                     distance75 = np.sqrt(dx*dx+dy*dy)  
@@ -243,7 +215,6 @@ def calMultiRegression_coef_mean_water(bt,leadingTime,ty1,ty2,predictors,fstType
    n1 = bt.StormMwspd.shape[0]*bt.StormMwspd.shape[1]
    n2 = len(predictors)
    varRegress = Vregression1(n1,n2)
-   #varRegress1 = Vregression1(n1,n2)
    
    ### index for errors/residuals
    itIdx = np.full(n1, -1, dtype=int)
@@ -257,12 +228,6 @@ def calMultiRegression_coef_mean_water(bt,leadingTime,ty1,ty2,predictors,fstType
 
    iS = bt.StormYear.tolist().index(ty1) 
    count1 = 0
-
-   ## debugging
-   # predictor_names = ['StormMwspd','dVdt','trSpeed','dPIwspd','SHRD','rhMean','dPIwspd2','dPIwspd3','dVdt2']
-   # for i, name in enumerate(predictor_names):
-   #    col = varRegress.x[:count1, i]
-   #    print(f'{name}: {np.isnan(col).sum()} / {count1} NaN  (min={np.nanmin(col) if not np.all(np.isnan(col)) else "all-nan"}, max={np.nanmax(col) if not np.all(np.isnan(col)) else "all-nan"})')
 
    while True:
       if ( (int(bt.StormYear[iS]) >= ty1) & (int(bt.StormYear[iS]) < ty2) ):
@@ -325,29 +290,21 @@ def calMultiRegression_coef_mean_water(bt,leadingTime,ty1,ty2,predictors,fstType
             count1 += 1 
  
       iS += 1
-      #print(iS)
-      #print(bt.StormYear.shape[0]-1)
       if iS > bt.StormYear.shape[0]-1:break
       
-   #print(varRegress1.x[0,:])
-
    a = 1
    for iv in range(0,n2,1):
       a = a*varRegress.x[:,iv] 	
    a = a*varRegress.y
 
+   ## debugging
    # print('rows written (count1):', count1)
    # print('valid rows after NaN filter:', np.sum(a == a))
-   # print('rows with any-NaN y:', np.sum(np.isnan(varRegress.y[:count1])))
-   # print('rows with any-NaN x:', np.sum(np.isnan(varRegress.x[:count1, :]).any(axis=1)))
-   # print('landmaskMean range this window:', np.nanmin(bt.landmaskMean), np.nanmax(bt.landmaskMean))
+   # print('rows with NaN Y:', np.sum(np.isnan(varRegress.y[:count1])))
+   # print('rows with NaN X:', np.sum(np.isnan(varRegress.x[:count1, :]).any(axis=1)))
+   # print('landmaskMean range:', np.nanmin(bt.landmaskMean), np.nanmax(bt.landmaskMean))
 
    #print(varRegress.x)
-
-   # predictor_names = ['StormMwspd','dVdt','trSpeed','dPIwspd','SHRD','rhMean','dPIwspd2','dPIwspd3','dVdt2']
-   # for i, name in enumerate(predictor_names):
-   #    col = varRegress.x[:count1, i]
-   #    print(f'{name}: {np.isnan(col).sum()} / {count1} NaN  (min={np.nanmin(col) if not np.all(np.isnan(col)) else "all-nan"}, max={np.nanmax(col) if not np.all(np.isnan(col)) else "all-nan"})')
 
 
    X = sm.add_constant(varRegress.x[a==a,:], prepend = 'True')
@@ -457,7 +414,6 @@ def calMultiRegression_coef_mean_land(bt,leadingTime,ty1,ty2,predictors,fstType)
       iS += 1
       if iS > bt.StormYear.shape[0]-1:break
 	
-   #print(varRegress1.x[0,:])
 
    a = 1
    for iv in range(0,n2,1):
@@ -483,8 +439,6 @@ def calCoefficient_water_guess(ty1, ty2, ih):
    """
    calculate first guess coefficient from OLS
    """
-   #  from tools.regression4 import calMultiRegression_coef_mean_water
-   #  from tools.regression4 import calMultiRegression_coef_mean_land
 
    print('starting water')
    ### calculatae coefficients
@@ -524,11 +478,6 @@ def bt_to_xr(bt, template):
             v = v.T
         if v.shape != tvar.shape:
             raise ValueError(f"{name}: bt shape {v.shape} != template {tvar.shape}")
-
-        ## if mybt converts time to datetime
-        # if 'Time' in name:
-        #     # object array of datetimes -> datetime64, works for 1-D or 2-D
-        #     v = pd.to_datetime(v.ravel()).values.reshape(v.shape)
         
         elif v.dtype != tvar.dtype:
             v = v.astype(tvar.dtype)      # e.g. keeps basin as |S2
@@ -553,8 +502,7 @@ def run_calCoefficients():
     global ldmask
     landmaskfile = 'input/landmask.nc'
     llon, llat, dummy = get_landmask(landmaskfile)
-    #ldmask = dummy[-12::-24,::24]  #<- original, should this update to
-    ldmask = dummy[::-24,  ::24]  ## update landmask to higher resolution? 
+    ldmask = dummy[::-24,  ::24]  ## Use 0.75º landmask
 
     if True:
         ## pull in best tracks from resize_basinData
@@ -579,11 +527,6 @@ def run_calCoefficients():
             get_predictors(np.array([iS,iS]), iy1, iy2)
 
 
-        #time1 = time.time()
-        ## this is just as slow as the for loop i think 
-        # new = da.map_blocks(get_predictors,diS,chunks=(1,1))
-        # a = new.compute()
-
         print('done calPredictors at ', np.round((time.time()-time1)/60, 3), 'minutes')
 
         gc.collect()
@@ -592,16 +535,16 @@ def run_calCoefficients():
         bt = mybt(bt1)
         with open(ipath+'trackPredictorsbt_obs.pik','wb')as f:
                 pickle.dump(bt,f)
-        #with open(ipath+'trackPredictorsbt_obs.pik','w+')as f:
-        #        pickle.dump(bt,f)
+
         f.close()
+    
+    ## likely could remove
     else:
         with open(ipath+'trackPredictorsbt_obs.pik','r')as f:
             bt = pickle.load(f)
         f.close()
 
     print('done pickling at ', np.round((time.time()-time1)/60, 3), 'minutes')
-
     print('start calCoefficient_water_guess at ', np.round((time.time()-time1)/60, 3), 'minutes')
 
     result_w,meanX_w,meanY_w,stdX_w,stdY_w,result_l,meanX_l,meanY_l,stdX_l,stdY_l,errs = calCoefficient_water_guess(iy1,iy2+1,12)
@@ -671,8 +614,7 @@ def run_calCoefficients():
     save_params(result_l, ipath+'result_l.nc')
     save_params(result_w, ipath+'result_w.nc')
 
-    ##TODO: Fix this hardcoded silliness
-    bt_global = xr.open_dataset("/home/miriamn/CHAZ/CHAZvectorized/input/updating/bt_global.nc").load()
+    bt_global = xr.open_dataset(gv.ipath+'bt_global.nc').load()
 
     ds_global_predictors = bt_to_xr(bt, bt_global)
     ds_global_predictors.to_netcdf(gv.ipath+'bt_global_predictors.nc')
