@@ -233,6 +233,9 @@ def squeeze(a):
     b = asarray(a.shape)
     return reshape (a, tuple (compress (not_equal (b, 1), b)))
 
+
+### TODO: Replace with version in caldesto_track_lysis_v2.py
+### After vetting
 def getbasinMap():
     '''
     This function returns x bins, y bins, and a plot of the basin map.

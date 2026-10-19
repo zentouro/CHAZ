@@ -4,6 +4,7 @@ channels:
   - conda-forge
 
 dependencies: 
+  - python=3.6.15
   - numpy
   - pandas
   - scipy
@@ -18,7 +19,8 @@ dependencies:
   - matplotlib
   - pooch
   - numba
-  - netcdftime
+  - ipykernal       ## for running jupyter notebooks
+  - cdsapi          ## for downloading ERA5 data
 
   #Aux
   - tqdm
