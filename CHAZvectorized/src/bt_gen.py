@@ -5,6 +5,8 @@
 ## for CHAZ from IBTrACS ##
 ###########################
 
+### STILL IN DEVELOPMENT
+
 
 ### Necessary Packages
 import xarray as xr
@@ -83,7 +85,6 @@ class read_ibtracs_v4_xr(object):
         dist2land = np.full([n_storms, d1], np.nan)
         trspeed = np.full([n_storms, d1], np.nan)
         trdir = np.full([n_storms, d1], np.nan)
-        #sdate = np.full([n_storms, d1], np.datetime64('NaT'))
         sdate = np.full([n_storms, d1], np.datetime64('NaT'), dtype=ds1.time.values.dtype)
         status = np.full([n_storms, d1], b'  ', dtype='S2')
  
@@ -123,18 +124,18 @@ class read_ibtracs_v4_xr(object):
 def _time_to_numeric(dates_2d, clock_start_time=np.datetime64('1800-01-01')):
 #def _time_to_numeric(dates_2d, clock_start_time=datetime(1800,1,1,0)):
     """
-    Converts a (d1,d2) datetime64 array (NaT = missing) into days since
+    Converts a (d1, d2) datetime64 array (NaT = missing) into days since
     `clock_start_time`
  
-    TODO: double-check this is the correct start time.
-    This is 
+    TODO: This may not be the correct start time, or correct approach.
+
     """
     days = (dates_2d - clock_start_time) / np.timedelta64(1, 'D')
     return np.where(pd.isna(dates_2d), 0.0, days).astype(float)
 
 def build_bt(ncFileName, basinName, outFileName):
     '''
-    reads in ibtracs information, creates best tracks file for each basin and the globe
+    Reads in IBTrACS information, creates best tracks file for each basin and the globe
     generates empty nan dataarrays for all relevant variables for CHAZ that are later calculated with 
     get_predictors. 
     '''
@@ -182,7 +183,9 @@ def build_bt(ncFileName, basinName, outFileName):
     dVdt[2:, :] = StormMwspd[2:, :] - StormMwspd[:-2, :]
     dPdt[1:, :] = StormMslp[1:, :] - StormMslp[:-1, :]
 
-    ## conversion, not totally sure about this yet
+    ## conversion,
+    # TODO: need to double check dates generated 
+    ## against actual storms
     Time = _time_to_numeric(dates)
 
     ## start structure for netcdf output
@@ -239,13 +242,9 @@ def build_all_basins(ncFileName, basins, outdir):
             build_bt(ncFileName, b, outFileName)
  
 
-#if __name__ == "__main__":
-#NC_FILE = '/xpt/taroko.local/data0/clee/bt/IBTrACS.ALL.v04r00.nc'
-#NC_FILE = "/home/miriamn/CHAZ/CHAZvectorized/input/IBTrACS.ALL.v04r01.nc"
-#OUTDIR = "/home/miriamn/CHAZ/CHAZvectorized/input/updating/"
-
 def run_btgen():
     if __name__ == "__main__":
+        ## TODO: Add download of most recent version
         IBTrACS_FILE = gv.ipath+'IBTrACS.ALL.v04r01.nc'
         OUTDIR = gv.ipath
         build_all_basins(IBTrACS_FILE, ['atl', 'enp', 'wnp', 'sh', 'ni', 'global'], OUTDIR)
