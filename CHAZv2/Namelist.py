@@ -33,7 +33,7 @@ Model = 'ERA5'
 ENS = 'r1i1p1f1'
 TCGIinput = 'TCGI_CRH_PI'          # or "TCGI_SD_RI" or 'TCGI_CRH'
 CHAZ_ENS_0 = 0           
-CHAZ_ENS = 2                      # Number of ensemble realizations.  
+CHAZ_ENS = 1                      # Number of ensemble realizations.  
 CHAZ_Int_ENS = 40                  # Number of intensity realizations
 
 ### CHAZ parameters
@@ -73,16 +73,15 @@ ldldmask = lldmask[::-9, ::9]           ## .75º [used in module_GenBamPred.bam 
 ldlon = llon[::9]
 ldlat = llat[::9]
 #lldmask = lldmask[::-1,:]              ## flips latitudes so they are in the right order
-lldmask = ldldmask                      ## uses updated landmask throughotu                          
+#lldmask = ldldmask                      ## uses updated landmask throughotu                          
 
-### TODO: update this to v2 versus v1
 ####################################################
-#### use Beta version of CHAZ with optimized    ####
-#### and vectorized code                        ####
+#### run CHAZ using v1 (beta)                   ####
+#### or v2 (updated and vectorized)             ####
 ####                                            ####
 #####################################################
-#[use the updated vectorized version of CHAZ, rather than the original]
-vectorize = True       ## applied to both preprocess AND CHAZ 
+#[use the updated v2 version of CHAZ, rather than the original]
+v2 = True       ## applied to both preprocess AND CHAZ 
 
 ## for CHAZ
 ## random number generator with set seed to allow comparisons and reproducibility

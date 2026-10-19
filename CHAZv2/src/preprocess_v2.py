@@ -11,8 +11,7 @@ from scipy.io import loadmat
 from tools.util import int2str, fix_coords
 from netCDF4 import Dataset 
 
-## seeing if this can speed stuff up in grid building
-#from scipy.spatial import cKDTree
+## Used to speed up grid building
 from scipy.spatial import KDTree
 
 
@@ -46,10 +45,9 @@ def createNetCDF(covMatrix,iy,xlong,xlat):
 	lats[:] = xlat
 	lons[:] = xlong
 
-	## not really necessary update i don't think
+	## updated
 	months[:] = list(range(1,covMatrix.shape[1]+1,1))
-
-	## from GitHub
+	## original
 	#months[:] = range(1,covMatrix.shape[1]+1,1)
 
 	### start to create variables
@@ -65,9 +63,16 @@ def createNetCDF(covMatrix,iy,xlong,xlat):
 	return()
 
 def get_preprocess_fname(iy):
+	'''
+	Returns preprocessing filename for a given year. 
+	'''
 	return gv.pre_path + int2str(iy,4) + '_' + gv.ENS + '.nc'
 
+
 def _run_check(iy):
+	'''
+	Check if file exists and/or whether overwriting is requested in Namelist.py
+	'''
 	fname = get_preprocess_fname(iy)
 	return gv.overwrite or not os.path.exists(fname)
 
@@ -93,6 +98,7 @@ def run_preProcesses():
 			df_sub_vam.append(ia[:-1])
 		if 'relative_humidity' in ia:
 			df_sub_hurm.append(ia[:-1])
+
 	df_sub_uam = np.array(df_sub_uam)
 	df_sub_vam = np.array(df_sub_vam)
 	df_sub_hurm = np.array(df_sub_hurm)
@@ -109,8 +115,9 @@ def run_preProcesses():
 	xllon,xllat = np.meshgrid(xlon,xlat) # desired grids
 
 	## remapping
-	## big ol speedup (54 seconds to ~1.5)
-	## is this just nearest neighbor? 
+	## Large speedup (54 seconds to ~1.5 seconds/year)
+	## Original calculated nearest neighbor in nested for loop, scipy's kdtree 
+	## on a numpy array is significantly faster
 	# ckdtree https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.html
 	# kdtree https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html#scipy.spatial.KDTree 
 
@@ -119,7 +126,7 @@ def run_preProcesses():
 	orig_points = np.column_stack([ollon.ravel(), ollat.ravel()])
 	
 	#tree = cKDTree(orig_points)			## nearest neighbor
-	tree = KDTree(orig_points)				## seems like cKDTree and KDTree are the same now
+	tree = KDTree(orig_points)				## seems like cKDTree and KDTree are the same
 
 	## grab all desired points at once
 	desired_points = np.column_stack([xllon.ravel(), xllat.ravel()])
@@ -133,55 +140,19 @@ def run_preProcesses():
 	il1 = np.where(xllon.ravel() < ollon[ndis_j, ndis_i], ndis_i - 1, ndis_i).reshape(xllon.shape)
 	il2 = np.where(xllon.ravel() < ollon[ndis_j, ndis_i], ndis_i, ndis_i + 1).reshape(xllon.shape)
 
-
-	## ORIGINAL 
-	# first gives 4 empty arrays for saving the closest 4 origional grids indicies
-	# at each desired grids based on distance
-	# time1 = time.time()
-	# jl1,jl2 = np.zeros(xllon.shape),np.zeros(xllon.shape)
-	# il1,il2 = np.zeros(xllon.shape),np.zeros(xllon.shape)
-	# for jx in range (xllon.shape[0]):
-	# 	for ix in range(xllon.shape[1]):
-	# 		#print jx, ix
-	# 		dis = np.sqrt((ollon-xllon[jx,ix])**2+(ollat-xllat[jx,ix])**2)
-	# 		ndis = np.argwhere(dis==dis.min())[-1]
-	# 		if xllat[jx,ix] < ollat[ndis[0],ndis[1]]: # higher then the desiered grid 
-	# 			jl1[jx,ix] = ndis[0]-1
-	# 			jl2[jx,ix] = ndis[0]
-	# 		else: # lower
-	# 			jl1[jx,ix] = ndis[0]
-	# 			jl2[jx,ix] = ndis[0]+1
-	# 		if xllon[jx,ix] < ollon[ndis[0],ndis[1]]: # further right
-	# 			il1[jx,ix] = ndis[1]-1
-	# 			il2[jx,ix] = ndis[1]
-	# 		else: # further left
-	# 			il1[jx,ix] = ndis[1]
-	# 			il2[jx,ix] = ndis[1]+1
-	# jl1 = np.int_(jl1)
-	# jl2 = np.int_(jl2)
-	# il1 = np.int_(il1)
-	# il2 = np.int_(il2)
-
-
 	## boundaries
 	il2[il2==olon.shape[0]]=0 # periodical BL, so 360 is equal to 0 degree.
 	jl1[jl1<0]=0
 	jl2[jl2==olat.shape[0]]=olat.shape[0]-1
 	
-	#print('done mapping', time.time()-time1)
 
 	#### for covMatrix 
 	if True:
+		## reminder, years_todo is accounting for overwrite option
 		#for iy in range(y1, y2+1):
 		for iy in years_todo:
-			#time1 = time.time()
 			filename = gv.pre_path+'Cov_'+int2str(iy,4)+'.nc'
-			#nc = Dataset(filename,'r',format='NETCDF3_CLASSIC')
 			nc = Dataset(filename,'r',format='NETCDF4')
-
-			## debugging
-			# test_var = nc.variables[list(nc.variables.keys())[3]][:]
-			# print(test_var[0,0,0], test_var[5,0,0], test_var[11,0,0])
 
 			covMatrix = np.zeros([10,nc.variables['month'].shape[0],xlat.shape[0],xlon.shape[0]])
 			count = 0
@@ -236,10 +207,8 @@ def run_preProcesses():
 		hur700 = ds_hurm.r[arg_tm,arg_p700m].values
 		hur850 = ds_hurm.r[arg_tm,arg_p850m].values
 		
-		#t2 = time.time()
 		hur = (hur500+hur700+hur850)/3.
 
-		
 		### in some models the dynamic variable and thermodyanmic variable 
 		### are output at grid center
 		### we need to map them on the same grid
@@ -305,7 +274,7 @@ def run_preProcesses():
 		# 		((ollon[jl2,il2]-ollon[jl2,il1])*(ollat[jl2,il2]-ollat[jl1,il2]))
 
 			var2[var2>1000000000] = -1e+20 
-			### NEED TO UPDATE FROM PY2 - PY3
+			### updated from PY2 - PY3
 			#exec(iv+'2 = var2')
 			_vars[iv+'2'] = var2
 			del var, var2
@@ -313,7 +282,6 @@ def run_preProcesses():
 		#t3 = time.time()
 
 		NewFile = gv.pre_path+int2str(iy,4)+'_'+gv.ENS+'.nc'
-		#nc = Dataset(NewFile,'w',format='NETCDF3_CLASSIC')  
 		nc = Dataset(NewFile, 'w', format = 'NETCDF4')
 		nc.createDimension('Longitude',xllon.shape[1])
 		Longitude = nc.createVariable('Longitude',np.dtype('float32').char,('Longitude'))
@@ -341,17 +309,10 @@ def run_preProcesses():
 		nc.close()
 		if np.mod(iy,10)==0:
 			gc.collect()
-			#print('year'+int2str(iy,4),time.time()-time1)
-
-		#t4 = time.time()
-		##TODO: go back and remove extraneous time stuff
-		#print(f'{iy}: argwhere={t1-t0:.2f}  reads={t2-t1:.2f}  interp={t3-t2:.2f}  write={t4-t3:.2f}')
-
 
 	return
 
 
-# --------
 def createNetCDF_A(A1,iy,im,xllon,xllat):
 	"""
 	create NetCDF file for the syn wind, it will be 124MB each
@@ -360,7 +321,6 @@ def createNetCDF_A(A1,iy,im,xllon,xllat):
 	xllon: longitude array
 	xllat: latitude array
 	"""
-	# nc = Dataset(gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc','w',format='NETCDF3_CLASSIC')
 	nc = Dataset(gv.pre_path+'A_'+int2str(iy,4)+int2str(im,2)+'.nc','w',format='NETCDF4')
 	nc.createDimension('latitude',xllat.shape[0])
 	nc.createDimension('longitude',xllon.shape[0])
