@@ -202,7 +202,11 @@ iy1,iy2 = 1981,2012
 global ldmask
 landmaskfile = 'input/landmask.nc'
 llon, llat,dummy = get_landmask(landmaskfile)
-ldmask = dummy[-12::-24,::24]
+# original
+#ldmask = dummy[-12::-24,::24]
+# update landmask 
+ldmask = dummy[::-9,::9]     
+
 
 if True:
     global bt

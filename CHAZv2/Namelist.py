@@ -33,7 +33,7 @@ Model = 'ERA5'
 ENS = 'r1i1p1f1'
 TCGIinput = 'TCGI_CRH_PI'          # or "TCGI_SD_RI" or 'TCGI_CRH'
 CHAZ_ENS_0 = 0           
-CHAZ_ENS = 2                       # Number of ensemble realizations.  
+CHAZ_ENS = 10                       # Number of ensemble realizations.  
 CHAZ_Int_ENS = 40                  # Number of intensity realizations
 
 ### CHAZ parameters
@@ -58,7 +58,7 @@ opath = 'input/original/bt_global_predictors.nc'
 pre_path = '/data0/miriamn/CHAZvectorized/pre/'
 
 ## CHAZ output path
-output_path = '/data0/miriamn/CHAZvectorized/output/101826-landmask-check/'
+output_path = '/data0/miriamn/CHAZvectorized/output/102126/'
 
 ## Years to run preproecessing AND CHAZ
 ## Training (when implemented) will default to 1980 to Year2
@@ -67,13 +67,12 @@ Year2 = 2025
 
 ### Defining landmask
 llon, llat, lldmask = get_landmask(landmaskfile)
-lldmask = lldmask[::-1,:]               ## flips latitudes so they are in the right order 
-ldmask = lldmask[::-24,  ::24]          ## 2º
-ldldmask = lldmask[::-9, ::9]           ## .75º [used in module_GenBamPred.bam and .get_predictors]
+ldmask = lldmask[::-24,::24]                ## 2º
+ldldmask = lldmask[::-9,::9]                ## .75º [used in module_GenBamPred.bam and .get_predictors]
 ldlon = llon[::9]
 ldlat = llat[::9]
-#lldmask = lldmask[::-1,:]              ## flips latitudes so they are in the right order
-#lldmask = ldldmask                      ## uses updated landmask throughotu                          
+## asssigning lldmask .75º throughout
+lldmask = ldldmask                    
 
 ####################################################
 #### Run CHAZ using v1 (beta)                   ####
